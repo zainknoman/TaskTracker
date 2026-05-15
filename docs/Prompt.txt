@@ -1,0 +1,251 @@
+You are a senior full-stack frontend engineer and UI/UX architect.
+
+Build a professional "Daily Work Task & Assignment Tracker" as a single-page application using only:
+
+* HTML5
+* Vanilla JavaScript (ES6)
+* CSS3
+
+Do NOT use React, Vue, Angular, jQuery, Tailwind, Bootstrap, or external frameworks.
+
+The output should be production-ready and split into:
+
+* index.html
+* style.css
+* app.js
+
+====================================================
+PROJECT PURPOSE
+===============
+
+This application will help manage:
+
+* Daily office tasks
+* Assignments
+* Dependencies
+* Business Analyst references
+* Reference documents
+* Task tracking workflow
+
+The UI should look modern, enterprise-grade, responsive, and clean.
+
+====================================================
+CORE FEATURES
+=============
+
+1. DASHBOARD
+
+* Overview cards:
+
+  * Total Tasks
+  * Pending
+  * In Progress
+  * Completed
+  * Blocked
+* Recent tasks section
+* Upcoming deadlines
+* Task completion progress bar
+
+2. CREATE TASK
+   Provide a form with:
+
+* Task Title
+* Description
+* Priority:
+
+  * Low
+  * Medium
+  * High
+  * Critical
+* Status:
+
+  * Pending
+  * In Progress
+  * Completed
+  * Blocked
+* Start Date
+* Due Date
+* Assigned BA (Business Analyst)
+* Tags
+* Reference Documents
+* Dependency Tasks
+* Estimated Hours
+* Notes
+* Attach multiple document links
+
+3. TASK LIST PAGE
+   Display all tasks in:
+
+* Responsive table/grid
+* Searchable
+* Sortable
+* Filterable
+
+Include filters:
+
+* Status
+* Priority
+* BA
+* Tags
+* Date range
+
+Each task card/row should show:
+
+* Title
+* Status badge
+* Priority badge
+* BA name
+* Due date
+* Dependencies
+* Tags
+* Progress
+
+4. TASK DETAILS MODAL
+   When clicking a task:
+
+* Open detailed popup/modal
+* Show complete information
+* Show dependency chain
+* Show linked reference documents
+* Show activity history
+
+5. DEPENDENCY MANAGEMENT
+   Allow:
+
+* Linking tasks together
+* Parent-child tasks
+* Blocking dependencies
+* Visual dependency indicator
+
+6. DOCUMENT REFERENCES
+   Allow:
+
+* Adding multiple document URLs
+* Open documents in new tab
+* Document title + link
+* Copy link button
+
+7. TAG SYSTEM
+
+* Multiple tags per task
+* Color-coded tags
+* Quick filtering by tags
+
+8. LOCAL STORAGE
+   Persist all data using browser localStorage.
+   No backend required.
+
+9. IMPORT / EXPORT
+   Provide:
+
+* Export tasks as JSON
+* Import tasks from JSON
+* Backup & restore support
+
+10. UI/UX REQUIREMENTS
+    Design should look:
+
+* Modern corporate dashboard
+* Professional
+* Clean spacing
+* Soft shadows
+* Rounded cards
+* Responsive on desktop and mobile
+* Smooth animations
+* Dark/light mode toggle
+
+11. ADVANCED FEATURES
+    Add:
+
+* Kanban Board View
+* Calendar View
+* Task progress tracking
+* Activity timeline
+* Toast notifications
+* Confirmation dialogs
+* Keyboard shortcuts
+* Auto-save
+* Collapsible sidebar navigation
+
+12. SEARCH & PRODUCTIVITY
+    Add:
+
+* Global search
+* Quick add task
+* Favorite/starred tasks
+* Recently viewed tasks
+* Smart filters
+
+====================================================
+TECHNICAL REQUIREMENTS
+======================
+
+* Use modular JavaScript structure
+* Clean commented code
+* Reusable functions
+* No inline CSS
+* No inline JS
+* Use semantic HTML
+* Use CSS variables
+* Mobile responsive
+* Use localStorage abstraction layer
+
+====================================================
+DESIGN REQUIREMENTS
+===================
+
+Theme:
+
+* Professional enterprise style
+* Banking/corporate inspired UI
+* Smooth gradients
+* Elegant typography
+* Card-based layout
+
+Animations:
+
+* Hover transitions
+* Modal animations
+* Smooth sidebar transitions
+* Toast animations
+
+====================================================
+OUTPUT REQUIREMENTS
+===================
+
+Generate COMPLETE code for:
+
+1. index.html
+2. style.css
+3. app.js
+
+The application must run directly by opening index.html in browser.
+
+No placeholders.
+No pseudo code.
+Everything fully implemented.
+
+Also include:
+
+* Sample task seed data
+* Icons using inline SVG
+* Proper folder structure
+* Detailed comments
+
+====================================================
+BONUS FEATURES
+==============
+
+If possible also add:
+
+* Gantt-style timeline
+* Drag-and-drop Kanban
+* Task analytics charts
+* Pinned tasks
+* Recurring tasks
+* Notification reminders
+* Theme customization
+* Printable reports
+* CSV export
+
+Build it like a real enterprise productivity tool used inside software companies and banks.

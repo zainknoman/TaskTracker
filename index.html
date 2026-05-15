@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow Pro — Enterprise Work Management</title>
+  
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ════════ LOGIN SCREEN ════════ -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-card">
+
+    <!-- Brand -->
+    <div class="login-brand">
+      <div class="login-brand-icon">
+        <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="#2563eb"/>
+          <path d="M7 9h14M7 14h9M7 19h11" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <div class="login-brand-name">TaskFlow <strong>Pro</strong></div>
+        <div class="login-brand-sub">Enterprise Work Management</div>
+      </div>
+    </div>
+
+    <h2 class="login-title">Sign in to your workspace</h2>
+    <p class="login-desc">Sign in to sync data across devices, or continue locally.</p>
+
+    <!-- Error message -->
+    <div id="loginError" class="login-error" style="display:none"></div>
+
+    <!-- Fields -->
+    <div class="login-field">
+      <label for="loginEmail">Email</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="login-field">
+      <label for="loginPassword">Password</label>
+      <input type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+
+    <!-- Primary actions -->
+    <button class="btn btn-primary login-btn" id="loginBtn">Sign In</button>
+    <button class="btn btn-secondary login-btn" id="signupBtn">Create Account</button>
+
+    <!-- Divider -->
+    <div class="login-divider"><span>or</span></div>
+
+    <!-- Guest / local mode -->
+    <button class="btn btn-ghost login-btn login-guest-btn" id="guestBtn">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      Continue without account <span class="login-guest-note">(data stays local)</span>
+    </button>
+
+    <p class="login-privacy">🔒 Your data never leaves your machine unless you sign in.</p>
+  </div>
+</div>
+
+<!-- ════════ MAIN APP ════════ -->
+<div class="app-wrapper" id="app" style="display:none">
+
+  <!-- ═══════════════════════════ SIDEBAR ═══════════════════════════ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="8" fill="#2563eb"/>
+          <path d="M7 9h14M7 14h9M7 19h11" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">TaskFlow <strong>Pro</strong></span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-title">WORKSPACE</span>
+        <ul class="nav-list">
+          <li><a class="nav-link active" data-view="dashboard" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+            <span class="nav-label">Dashboard</span>
+          </a></li>
+          <li><a class="nav-link" data-view="projects" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1H8a3 3 0 00-3 3v1.5a1.5 1.5 0 01-3 0V6z" clip-rule="evenodd"/><path d="M6 12a2 2 0 012-2h8a2 2 0 012 2v2a2 2 0 01-2 2H8a2 2 0 01-2-2v-2z"/></svg>
+            <span class="nav-label">Projects</span>
+            <span class="nav-badge" id="navBadgeProjects">0</span>
+          </a></li>
+          <li><a class="nav-link" data-view="tasks" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/><path fill-rule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm9.707 5.707a1 1 0 00-1.414-1.414L9 12.586l-1.293-1.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">All Tasks</span>
+            <span class="nav-badge" id="navBadgeTasks">0</span>
+          </a></li>
+          <li><a class="nav-link" data-view="kanban" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+            <span class="nav-label">Kanban</span>
+          </a></li>
+          <li><a class="nav-link" data-view="calendar" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">Calendar</span>
+          </a></li>
+          <li><a class="nav-link" data-view="gantt" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h8a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h5a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">Gantt Timeline</span>
+          </a></li>
+          <li><a class="nav-link" data-view="analytics" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+            <span class="nav-label">Analytics</span>
+          </a></li>
+          <li><a class="nav-link" data-view="team" href="#">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>
+            <span class="nav-label">Team</span>
+          </a></li>
+        </ul>
+      </div>
+
+      <!-- Dynamic Projects in sidebar -->
+      <div class="nav-section" id="sidebarProjectsSection">
+        <div class="nav-section-header">
+          <span class="nav-section-title">PROJECTS</span>
+          <button class="nav-add-btn" id="newProjectSidebarBtn" title="New Project">+</button>
+        </div>
+        <ul class="nav-list" id="sidebarProjectList"></ul>
+      </div>
+
+      <div class="nav-section">
+        <span class="nav-section-title">TOOLS</span>
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#" id="exportJsonBtn">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">Export JSON</span>
+          </a></li>
+          <li><a class="nav-link" href="#" id="importJsonBtn">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">Import JSON</span>
+          </a></li>
+          <li><a class="nav-link" href="#" id="exportCsvBtn">
+            <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/></svg>
+            <span class="nav-label">Export CSV</span>
+          </a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="theme-toggle-btn" id="logoutBtn" style="display:none">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+        <span>Sign Out</span>
+      </button>
+      <button class="theme-toggle-btn" id="themeToggle">
+        <svg class="icon-sun" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/></svg>
+        <svg class="icon-moon" viewBox="0 0 20 20" fill="currentColor"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
+        <span id="themeLabel">Dark Mode</span>
+      </button>
+      <button class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Collapse sidebar">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M15.707 15.707a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 010 1.414zm-6 0a1 1 0 01-1.414 0l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 1.414L5.414 10l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+  <div class="main-wrapper" id="mainWrapper">
+
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM9 15a1 1 0 011-1h6a1 1 0 110 2h-6a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+      </button>
+      <div class="topbar-breadcrumb" id="topbarBreadcrumb"><span class="crumb-item">All Projects</span></div>
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search tasks, projects… (Ctrl+K)" autocomplete="off"/>
+        <div class="search-dropdown" id="searchDropdown"></div>
+      </div>
+      <div class="topbar-right">
+        <button class="topbar-icon-btn" id="commandPaletteBtn" title="Command Palette (Ctrl+P)">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3.293 1.293a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 01-1.414-1.414L7.586 10 5.293 7.707a1 1 0 010-1.414zM11 12a1 1 0 100 2h3a1 1 0 100-2h-3z" clip-rule="evenodd"/></svg>
+        </button>
+        <button class="btn btn-secondary btn-sm" id="newProjectTopBtn">+ Project</button>
+        <button class="btn btn-primary" id="newTaskBtn">+ New Task</button>
+      </div>
+    </header>
+
+    <main class="content-area">
+
+      <!-- ── GLOBAL DASHBOARD ── -->
+      <section id="view-dashboard" class="view active">
+        <div class="view-header">
+          <div><h1 class="view-title">Dashboard</h1><p class="view-subtitle" id="dashDate"></p></div>
+          <div class="view-actions">
+            <button class="btn btn-ghost btn-sm" id="clearActiveProjectBtn" style="display:none">✕ Clear Project Filter</button>
+          </div>
+        </div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="progress-row">
+          <div class="card progress-card">
+            <div class="progress-card-header"><span class="progress-card-label">Overall Task Completion</span><span class="progress-card-pct" id="progressPct">0%</span></div>
+            <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="dashboard-cols">
+          <div class="card"><div class="card-header"><h3>Projects Overview</h3></div><div id="projectsOverviewList"></div></div>
+          <div class="card"><div class="card-header"><h3>Upcoming Deadlines</h3><span class="badge badge-danger" id="overdueCount" style="display:none"></span></div><div id="upcomingList"></div></div>
+        </div>
+        <div class="dashboard-cols" style="margin-top:16px">
+          <div class="card"><div class="card-header"><h3>Recent Activity</h3></div><div id="recentActivityList"></div></div>
+          <div class="card"><div class="card-header"><h3>Team Workload</h3></div><div id="teamWorkloadList"></div></div>
+        </div>
+      </section>
+
+      <!-- ── PROJECTS VIEW ── -->
+      <section id="view-projects" class="view">
+        <div class="view-header">
+          <div><h1 class="view-title">Projects</h1><p class="view-subtitle" id="projectCountLabel"></p></div>
+          <div class="view-actions">
+            <div class="view-toggle-group">
+              <button class="view-toggle active" id="projGridBtn" title="Grid">
+                <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><rect x="0" y="0" width="6" height="6" rx="1"/><rect x="10" y="0" width="6" height="6" rx="1"/><rect x="0" y="10" width="6" height="6" rx="1"/><rect x="10" y="10" width="6" height="6" rx="1"/></svg>
+              </button>
+              <button class="view-toggle" id="projListBtn" title="List">
+                <svg viewBox="0 0 16 16" fill="currentColor" width="14" height="14"><rect x="0" y="0" width="16" height="3" rx="1"/><rect x="0" y="6" width="16" height="3" rx="1"/><rect x="0" y="12" width="16" height="3" rx="1"/></svg>
+              </button>
+            </div>
+            <select class="filter-select" id="projectStatusFilter"><option value="">All Status</option><option value="planning">Planning</option><option value="active">Active</option><option value="on-hold">On Hold</option><option value="completed">Completed</option></select>
+            <button class="btn btn-primary" id="newProjectBtn">+ New Project</button>
+          </div>
+        </div>
+        <div id="projectsContainer" class="projects-grid"></div>
+      </section>
+
+      <!-- ── PROJECT DETAIL ── -->
+      <section id="view-project-detail" class="view">
+        <div id="projectDetailHeader" class="project-detail-header"></div>
+        <div class="project-tabs-wrap">
+          <div class="project-tabs" id="projectTabsRow">
+            <button class="proj-tab active" data-ptab="overview">Overview</button>
+            <button class="proj-tab" data-ptab="tasks">Tasks</button>
+            <button class="proj-tab" data-ptab="kanban">Kanban</button>
+            <button class="proj-tab" data-ptab="milestones">Milestones</button>
+            <button class="proj-tab" data-ptab="sprints">Sprints</button>
+          </div>
+        </div>
+        <div id="projTabContent" class="proj-tab-content"></div>
+      </section>
+
+      <!-- ── ALL TASKS ── -->
+      <section id="view-tasks" class="view">
+        <div class="view-header">
+          <div><h1 class="view-title" id="tasksViewTitle">All Tasks</h1><p class="view-subtitle" id="taskCountLabel"></p></div>
+          <div class="view-actions"><button class="btn btn-primary" id="newTaskBtnList">+ New Task</button></div>
+        </div>
+        <div class="filter-bar">
+          <select class="filter-select" id="filterProject"><option value="">All Projects</option></select>
+          <select class="filter-select" id="filterStatus"><option value="">All Status</option><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="completed">Completed</option><option value="blocked">Blocked</option></select>
+          <select class="filter-select" id="filterPriority"><option value="">All Priority</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option><option value="critical">Critical</option></select>
+          <select class="filter-select" id="filterBA"><option value="">All BAs</option></select>
+          <select class="filter-select" id="filterMilestone"><option value="">All Milestones</option></select>
+          <input type="date" class="filter-date" id="filterFrom"/>
+          <input type="date" class="filter-date" id="filterTo"/>
+          <button class="btn btn-ghost btn-sm" id="clearFiltersBtn">✕ Clear</button>
+        </div>
+        <div class="table-wrapper">
+          <table class="task-table" id="taskTable">
+            <thead><tr>
+              <th class="sortable" data-sort="title">Title <span class="sort-arrow">↕</span></th>
+              <th>Project</th>
+              <th class="sortable" data-sort="status">Status <span class="sort-arrow">↕</span></th>
+              <th class="sortable" data-sort="priority">Priority <span class="sort-arrow">↕</span></th>
+              <th class="sortable" data-sort="ba">BA <span class="sort-arrow">↕</span></th>
+              <th class="sortable" data-sort="dueDate">Due <span class="sort-arrow">↕</span></th>
+              <th>Tags</th>
+              <th>Progress</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="taskTableBody"></tbody>
+          </table>
+          <div class="empty-state" id="emptyState" style="display:none">
+            <svg viewBox="0 0 64 64" fill="none" width="56" height="56"><circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="1.5" opacity=".3"/><path d="M22 32l7 7 13-13" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".5"/></svg>
+            <h3>No tasks found</h3><p>Try adjusting filters or create a new task</p>
+            <button class="btn btn-primary" id="emptyCreateBtn">+ Create Task</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── KANBAN ── -->
+      <section id="view-kanban" class="view">
+        <div class="view-header">
+          <h1 class="view-title" id="kanbanViewTitle">Kanban Board</h1>
+          <div class="view-actions">
+            <select class="filter-select" id="kanbanProjectFilter"><option value="">All Projects</option></select>
+          </div>
+        </div>
+        <div class="kanban-board" id="kanbanBoard"></div>
+      </section>
+
+      <!-- ── CALENDAR ── -->
+      <section id="view-calendar" class="view">
+        <div class="view-header">
+          <h1 class="view-title">Calendar</h1>
+          <div class="cal-nav-group">
+            <button class="btn btn-ghost btn-sm" id="calPrev">‹ Prev</button>
+            <span class="cal-month-label" id="calMonthLabel"></span>
+            <button class="btn btn-ghost btn-sm" id="calNext">Next ›</button>
+          </div>
+        </div>
+        <div id="calendarWrap"></div>
+      </section>
+
+      <!-- ── GANTT TIMELINE ── -->
+      <section id="view-gantt" class="view">
+        <div class="view-header">
+          <h1 class="view-title">Gantt Timeline</h1>
+          <div class="view-actions">
+            <select class="filter-select" id="ganttProjectFilter"><option value="">All Projects</option></select>
+            <select class="filter-select" id="ganttRangeFilter"><option value="3">3 Months</option><option value="6" selected>6 Months</option><option value="12">12 Months</option></select>
+          </div>
+        </div>
+        <div id="ganttContainer" class="gantt-container"></div>
+      </section>
+
+      <!-- ── ANALYTICS ── -->
+      <section id="view-analytics" class="view">
+        <div class="view-header">
+          <h1 class="view-title">Analytics</h1>
+          <div class="view-actions">
+            <select class="filter-select" id="analyticsProjectFilter"><option value="">All Projects</option></select>
+          </div>
+        </div>
+        <div id="analyticsContainer"></div>
+      </section>
+
+      <!-- ── TEAM ── -->
+      <section id="view-team" class="view">
+        <div class="view-header">
+          <h1 class="view-title">Team</h1>
+          <button class="btn btn-primary" id="newUserBtn">+ Add Member</button>
+        </div>
+        <div id="teamContainer"></div>
+      </section>
+
+    </main>
+	    <!-- ════════ FOOTER ════════ -->
+    <footer class="app-footer">
+       <span>© <span id="footerYear"></span> <strong>ZainKamali</strong> – Task Tracker Pro</span>
+    </footer>
+  </div>
+</div>
+
+<!-- ════════ TASK FORM MODAL ════════ -->
+<div class="overlay" id="formOverlay">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h2 id="formTitle">New Task</h2>
+      <button class="modal-close" id="formClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="fId"/>
+      <div class="form-tabs" id="formTabsRow">
+        <button type="button" class="form-tab active" data-ftab="basic">Basic Info</button>
+        <button type="button" class="form-tab" data-ftab="schedule">Schedule</button>
+        <button type="button" class="form-tab" data-ftab="docs">Docs &amp; Deps</button>
+        <button type="button" class="form-tab" data-ftab="subtasks">Subtasks</button>
+      </div>
+
+      <div class="form-tab-panel active" data-ftabpanel="basic">
+        <div class="form-grid">
+          <div class="form-group col-span-2"><label>Title <span class="req">*</span></label><input type="text" id="fTitle" placeholder="Task title…"/></div>
+          <div class="form-group col-span-2"><label>Description</label><textarea id="fDesc" rows="2" placeholder="Describe this task…"></textarea></div>
+          <div class="form-group"><label>Project <span class="req">*</span></label><select id="fProject"><option value="">Select project…</option></select></div>
+          <div class="form-group"><label>Milestone</label><select id="fMilestone"><option value="">No milestone</option></select></div>
+          <div class="form-group"><label>Sprint</label><select id="fSprint"><option value="">No sprint</option></select></div>
+          <div class="form-group"><label>Parent Task</label><select id="fParent"><option value="">Top-level task</option></select></div>
+          <div class="form-group"><label>Priority</label><select id="fPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
+          <div class="form-group"><label>Status</label><select id="fStatus"><option value="pending" selected>Pending</option><option value="inprogress">In Progress</option><option value="completed">Completed</option><option value="blocked">Blocked</option></select></div>
+          <div class="form-group"><label>Assigned BA</label><input type="text" id="fBA" list="baDatalist" placeholder="BA name…" autocomplete="off"/><datalist id="baDatalist"></datalist></div>
+          <div class="form-group"><label>Assignee</label><select id="fAssignee"><option value="">Unassigned</option></select></div>
+          <div class="form-group col-span-2"><label>Tags</label>
+            <div class="tag-input-wrap" id="tagInputWrap"><div class="tag-chips" id="tagChips"></div><input type="text" id="fTagInput" placeholder="Type + Enter to add…"/></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-tab-panel" data-ftabpanel="schedule">
+        <div class="form-grid">
+          <div class="form-group"><label>Start Date</label><input type="date" id="fStartDate"/></div>
+          <div class="form-group"><label>Due Date</label><input type="date" id="fDueDate"/></div>
+          <div class="form-group"><label>Estimated Hours</label><input type="number" id="fHours" min="0" step="0.5" placeholder="0"/></div>
+          <div class="form-group"><label>Actual Hours</label><input type="number" id="fActualHours" min="0" step="0.5" placeholder="0"/></div>
+          <div class="form-group col-span-2"><label>Progress — <span id="fProgressVal">0%</span></label><input type="range" id="fProgress" min="0" max="100" step="5" value="0" class="range-slider"/></div>
+          <div class="form-group col-span-2"><label>Notes</label><textarea id="fNotes" rows="3" placeholder="Additional notes…"></textarea></div>
+        </div>
+      </div>
+
+      <div class="form-tab-panel" data-ftabpanel="docs">
+        <div class="form-group" style="margin-bottom:20px">
+          <label>Reference Documents</label>
+          <div id="docsList"></div>
+          <button type="button" class="btn btn-ghost btn-sm" id="addDocBtn" style="margin-top:8px">+ Add Document</button>
+        </div>
+        <div class="form-group">
+          <label>Depends On <span class="form-hint-inline">(Ctrl+Click for multiple)</span></label>
+          <select id="fDeps" multiple class="multi-select"></select>
+        </div>
+      </div>
+
+      <div class="form-tab-panel" data-ftabpanel="subtasks">
+        <label style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--text-3)">Subtasks / Checklist</label>
+        <div id="subtaskList" style="margin-top:8px"></div>
+        <button type="button" class="btn btn-ghost btn-sm" id="addSubtaskBtn" style="margin-top:10px">+ Add Subtask</button>
+        <p class="form-hint" style="margin-top:8px">Progress auto-calculates from subtask completion when subtasks exist.</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-ghost" id="formCancel">Cancel</button>
+      <button type="button" class="btn btn-primary" id="formSave">Save Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ PROJECT FORM MODAL ════════ -->
+<div class="overlay" id="projectFormOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header"><h2 id="projectFormTitle">New Project</h2><button class="modal-close" id="projectFormClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="pfId"/>
+      <div class="form-grid">
+        <div class="form-group col-span-2"><label>Project Name <span class="req">*</span></label><input type="text" id="pfName" placeholder="e.g. Core Banking Upgrade"/></div>
+        <div class="form-group"><label>Project Code</label><input type="text" id="pfCode" placeholder="e.g. CBU-2025" maxlength="12"/></div>
+        <div class="form-group"><label>Department / Client</label><input type="text" id="pfDept" placeholder="e.g. Retail Banking"/></div>
+        <div class="form-group col-span-2"><label>Description</label><textarea id="pfDesc" rows="2" placeholder="Brief project overview…"></textarea></div>
+        <div class="form-group"><label>Project Manager</label><input type="text" id="pfPM" placeholder="PM name"/></div>
+        <div class="form-group"><label>BA Team</label><input type="text" id="pfBATeam" placeholder="e.g. Sarah, Omar"/></div>
+        <div class="form-group"><label>Status</label><select id="pfStatus"><option value="planning">Planning</option><option value="active" selected>Active</option><option value="on-hold">On Hold</option><option value="completed">Completed</option></select></div>
+        <div class="form-group"><label>Priority</label><select id="pfPriority"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="critical">Critical</option></select></div>
+        <div class="form-group"><label>Start Date</label><input type="date" id="pfStart"/></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="pfEnd"/></div>
+        <div class="form-group"><label>Budget (optional)</label><input type="number" id="pfBudget" placeholder="0" min="0"/></div>
+        <div class="form-group"><label>Color Theme</label>
+          <div class="color-picker" id="projectColorPicker"></div>
+          <input type="hidden" id="pfColor" value="#2563eb"/>
+        </div>
+        <div class="form-group col-span-2"><label>Tags</label>
+          <div class="tag-input-wrap" id="pTagInputWrap"><div class="tag-chips" id="pTagChips"></div><input type="text" id="pfTagInput" placeholder="Tag + Enter…"/></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" id="projectFormCancel">Cancel</button><button class="btn btn-primary" id="projectFormSave">Save Project</button></div>
+  </div>
+</div>
+
+<!-- ════════ MILESTONE FORM ════════ -->
+<div class="overlay" id="milestoneFormOverlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><h2 id="milestoneFormTitle">Add Milestone</h2><button class="modal-close" id="milestoneFormClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="mfId"/><input type="hidden" id="mfProjectId"/>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="form-group"><label>Name <span class="req">*</span></label><input type="text" id="mfName" placeholder="e.g. UAT Sign-off"/></div>
+        <div class="form-group"><label>Description</label><textarea id="mfDesc" rows="2"></textarea></div>
+        <div class="form-group"><label>Target Date</label><input type="date" id="mfDue"/></div>
+        <div class="form-group"><label>Status</label><select id="mfStatus"><option value="pending">Pending</option><option value="inprogress">In Progress</option><option value="completed">Completed</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" id="milestoneFormCancel">Cancel</button><button class="btn btn-primary" id="milestoneFormSave">Save Milestone</button></div>
+  </div>
+</div>
+
+<!-- ════════ SPRINT FORM ════════ -->
+<div class="overlay" id="sprintFormOverlay">
+  <div class="modal" style="max-width:440px">
+    <div class="modal-header"><h2 id="sprintFormTitle">New Sprint</h2><button class="modal-close" id="sprintFormClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button></div>
+    <div class="modal-body">
+      <input type="hidden" id="sfId"/><input type="hidden" id="sfProjectId"/>
+      <div class="form-grid" style="grid-template-columns:1fr">
+        <div class="form-group"><label>Sprint Name <span class="req">*</span></label><input type="text" id="sfName" placeholder="e.g. Sprint 1"/></div>
+        <div class="form-group"><label>Sprint Goal</label><textarea id="sfGoal" rows="2" placeholder="What we aim to achieve…"></textarea></div>
+        <div class="form-group"><label>Start Date</label><input type="date" id="sfStart"/></div>
+        <div class="form-group"><label>End Date</label><input type="date" id="sfEnd"/></div>
+        <div class="form-group"><label>Status</label><select id="sfStatus"><option value="planning">Planning</option><option value="active">Active</option><option value="completed">Completed</option></select></div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-ghost" id="sprintFormCancel">Cancel</button><button class="btn btn-primary" id="sprintFormSave">Save Sprint</button></div>
+  </div>
+</div>
+
+<!-- ════════ TASK DETAIL MODAL ════════ -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <div class="detail-title-row"><span id="detailStatusBadge"></span><h2 id="detailTitle" style="flex:1;overflow:hidden;text-overflow:ellipsis"></h2></div>
+      <div class="detail-actions">
+        <button class="btn btn-ghost btn-sm" id="detailStarBtn" title="Star/Unstar">⭐</button>
+        <button class="btn btn-secondary btn-sm" id="detailEditBtn">Edit</button>
+        <button class="btn btn-danger btn-sm" id="detailDeleteBtn">Delete</button>
+        <button class="modal-close" id="detailClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
+      </div>
+    </div>
+    <div class="modal-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- ════════ CONFIRM DIALOG ════════ -->
+<div class="overlay" id="confirmOverlay">
+  <div class="confirm-dialog">
+    <div class="confirm-icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+    <h3 id="confirmHeading">Confirm</h3>
+    <p id="confirmMsg">Are you sure?</p>
+    <div class="confirm-actions"><button class="btn btn-ghost" id="confirmCancelBtn">Cancel</button><button class="btn btn-danger" id="confirmOkBtn">Confirm</button></div>
+  </div>
+</div>
+
+<!-- ════════ COMMAND PALETTE ════════ -->
+<div class="overlay" id="commandOverlay">
+  <div class="command-palette">
+    <div class="command-input-wrap">
+      <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18" style="flex-shrink:0;color:var(--text-3)"><path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/></svg>
+      <input type="text" id="commandInput" placeholder="Search or type /newtask, /newproject, /dashboard…" autocomplete="off"/>
+    </div>
+    <div class="command-results" id="commandResults"></div>
+    <div class="command-footer"><span>↑↓ navigate</span><span>↵ select</span><span>Esc close</span></div>
+  </div>
+</div>
+
+<!-- ════════ TEAM MEMBER FORM MODAL ════════ -->
+<div class="overlay" id="memberFormOverlay">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="memberFormTitle">Add Team Member</h2>
+      <button class="modal-close" id="memberFormClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mbrId"/>
+      <!-- Avatar section -->
+      <div class="form-group" style="margin-bottom:20px">
+        <label>Avatar</label>
+        <div class="avatar-preset-grid" id="avatarPresetGrid"></div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:10px">
+          <label style="font-size:.78rem;color:var(--text-3);white-space:nowrap;margin:0">Or image URL:</label>
+          <input type="url" id="mbrAvatarUrl" placeholder="https://…" style="flex:1"/>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div class="form-group col-span-2">
+          <label>Name <span class="req">*</span></label>
+          <input type="text" id="mbrName" placeholder="Full name…"/>
+        </div>
+        <div class="form-group">
+          <label>Role</label>
+          <input type="text" id="mbrRole" list="mbrRoleDatalist" placeholder="e.g. Business Analyst"/>
+          <datalist id="mbrRoleDatalist">
+            <option value="Business Analyst"/>
+            <option value="Senior BA"/>
+            <option value="Developer"/>
+            <option value="Tech Lead"/>
+            <option value="QA Engineer"/>
+            <option value="UI/UX Designer"/>
+            <option value="Project Manager"/>
+            <option value="Scrum Master"/>
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Department / Team</label>
+          <input type="text" id="mbrTeam" placeholder="e.g. Retail Banking"/>
+        </div>
+        <div class="form-group">
+          <label>Email</label>
+          <input type="email" id="mbrEmail" placeholder="name@example.com"/>
+        </div>
+        <div class="form-group">
+          <label>Phone</label>
+          <input type="text" id="mbrPhone" placeholder="+1 555 000 0000"/>
+        </div>
+        <div class="form-group col-span-2">
+          <label>Skills</label>
+          <div class="tag-input-wrap" id="mbrSkillsWrap">
+            <div class="tag-chips" id="mbrSkillChips"></div>
+            <input type="text" id="mbrSkillInput" placeholder="Type + Enter to add…"/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="memberFormCancel">Cancel</button>
+      <button class="btn btn-primary" id="memberFormSave">Save Member</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="importFileInput" accept=".json" hidden/>
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+  // Prevent running under file:// protocol
+  if (window.location.protocol === 'file:') {
+    document.body.innerHTML = `
+      <div style="
+        min-height:100vh;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:#0f172a;
+        color:white;
+        font-family:Arial,sans-serif;
+        padding:40px;
+      ">
+        <div style="max-width:700px;background:#111827;padding:40px;border-radius:20px;border:1px solid #374151">
+          <h1 style="margin-top:0;font-size:32px">TaskFlow Pro</h1>
+
+          <p style="font-size:18px;line-height:1.7;color:#d1d5db">
+            This application now uses Supabase authentication and cannot run directly from
+            <code>file://</code> URLs.
+          </p>
+
+          <p style="font-size:16px;color:#9ca3af">
+            Run the app using a local HTTP server.
+          </p>
+
+          <div style="margin-top:24px;padding:20px;background:#1f2937;border-radius:12px">
+            <div style="font-weight:bold;margin-bottom:12px">Recommended:</div>
+            <pre style="white-space:pre-wrap;color:#93c5fd">VSCode → Install "Live Server" → Right click index.html → Open with Live Server</pre>
+          </div>
+
+          <div style="margin-top:18px;padding:20px;background:#1f2937;border-radius:12px">
+            <div style="font-weight:bold;margin-bottom:12px">Alternative:</div>
+            <pre style="white-space:pre-wrap;color:#86efac">python -m http.server 5500</pre>
+          </div>
+        </div>
+      </div>
+    `;
+
+    throw new Error('Supabase apps cannot run from file:// URLs');
+  }
+</script>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

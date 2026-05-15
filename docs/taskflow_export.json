@@ -1,0 +1,221 @@
+{
+  "tasks": [
+    {
+      "id": "task_mp2jqds1lmx0c",
+      "title": "CBI-DOCUPILOT-INTERFACE",
+      "description": "Integration of Docupilot with T24",
+      "priority": "high",
+      "status": "inprogress",
+      "startDate": "2026-03-25",
+      "dueDate": "2026-06-30",
+      "ba": "Muhammad Qabalah",
+      "estimatedHours": 0,
+      "tags": [],
+      "documents": [
+        {
+          "title": "DD.TXN.ALL",
+          "url": "C:\\Users\\Lenovo\\Downloads\\DD.TXNS.ALL.b"
+        }
+      ],
+      "dependencies": [],
+      "progress": 0,
+      "notes": "",
+      "starred": false,
+      "pinned": false,
+      "createdAt": "2026-05-12",
+      "updatedAt": "2026-05-12",
+      "activity": [
+        {
+          "time": "2026-05-12",
+          "desc": "Task created"
+        },
+        {
+          "time": "2026-05-12",
+          "desc": "Task updated"
+        }
+      ]
+    },
+    {
+      "id": "task_mp2jn4yt3r68x",
+      "title": "UAT Test Cases — KYC Workflow",
+      "description": "Prepare and execute UAT test cases for the Know Your Customer digital onboarding flow.",
+      "priority": "high",
+      "status": "pending",
+      "startDate": "2026-05-13",
+      "dueDate": "2026-05-19",
+      "ba": "Omar Farooq",
+      "tags": [
+        "QA",
+        "KYC"
+      ],
+      "documents": [
+        {
+          "title": "UAT Plan",
+          "url": "https://example.com/uat-kyc"
+        },
+        {
+          "title": "Test Script",
+          "url": "https://example.com/test-script"
+        }
+      ],
+      "dependencies": [],
+      "estimatedHours": 16,
+      "progress": 0,
+      "notes": "",
+      "starred": false,
+      "pinned": false,
+      "createdAt": "2026-05-10",
+      "updatedAt": "2026-05-10",
+      "activity": [
+        {
+          "time": "2026-05-10",
+          "desc": "Task created"
+        }
+      ]
+    },
+    {
+      "id": "task_mp2jn4ytaiqca",
+      "title": "Dashboard UI Redesign",
+      "description": "Redesign the customer-facing dashboard for improved UX, accessibility, and mobile responsiveness.",
+      "priority": "medium",
+      "status": "inprogress",
+      "startDate": "2026-05-04",
+      "dueDate": "2026-05-17",
+      "ba": "Ayesha Khan",
+      "tags": [
+        "Frontend",
+        "Design"
+      ],
+      "documents": [
+        {
+          "title": "Figma Mockups",
+          "url": "https://figma.com/example"
+        }
+      ],
+      "dependencies": [],
+      "estimatedHours": 32,
+      "progress": 75,
+      "notes": "Review meeting scheduled for Friday.",
+      "starred": true,
+      "pinned": false,
+      "createdAt": "2026-05-03",
+      "updatedAt": "2026-05-11",
+      "activity": [
+        {
+          "time": "2026-05-03",
+          "desc": "Task created"
+        },
+        {
+          "time": "2026-05-11",
+          "desc": "Progress updated to 75%"
+        }
+      ]
+    },
+    {
+      "id": "task_mp2jn4ytr945j",
+      "title": "JIB",
+      "description": "Review and update system workflows to comply with revised Anti-Money Laundering regulations.",
+      "priority": "high",
+      "status": "completed",
+      "startDate": "2026-04-22",
+      "dueDate": "2026-05-02",
+      "ba": "Omar Farooq",
+      "tags": [
+        "Compliance",
+        "AML"
+      ],
+      "documents": [
+        {
+          "title": "AML Policy v4",
+          "url": "https://example.com/aml-policy"
+        }
+      ],
+      "dependencies": [],
+      "estimatedHours": 20,
+      "progress": 100,
+      "notes": "Signed off by Risk & Compliance department.",
+      "starred": false,
+      "pinned": false,
+      "createdAt": "2026-04-20",
+      "updatedAt": "2026-05-12",
+      "activity": [
+        {
+          "time": "2026-04-20",
+          "desc": "Task created"
+        },
+        {
+          "time": "2026-05-02",
+          "desc": "Status changed to Completed"
+        },
+        {
+          "time": "2026-05-12",
+          "desc": "Task updated"
+        }
+      ]
+    },
+    {
+      "id": "task_mp2jn4ytt9fvo",
+      "title": "Mobile App — Biometric Auth",
+      "description": "Implement fingerprint and face recognition authentication for the mobile banking application.",
+      "priority": "high",
+      "status": "pending",
+      "startDate": "2026-05-14",
+      "dueDate": "2026-05-26",
+      "ba": "Ayesha Khan",
+      "tags": [
+        "Mobile",
+        "Security"
+      ],
+      "documents": [],
+      "dependencies": [],
+      "estimatedHours": 28,
+      "progress": 0,
+      "notes": "",
+      "starred": false,
+      "pinned": false,
+      "createdAt": "2026-05-11",
+      "updatedAt": "2026-05-11",
+      "activity": [
+        {
+          "time": "2026-05-11",
+          "desc": "Task created"
+        }
+      ]
+    },
+    {
+      "id": "task_mp2jn4ytfx8qs",
+      "title": "Database Migration — Legacy to Cloud",
+      "description": "Migrate all legacy on-premises database records to cloud infrastructure with zero data loss.",
+      "priority": "critical",
+      "status": "pending",
+      "startDate": "2026-05-17",
+      "dueDate": "2026-06-01",
+      "ba": "Hassan Malik",
+      "tags": [
+        "DevOps",
+        "Database"
+      ],
+      "documents": [
+        {
+          "title": "Migration Plan",
+          "url": "https://example.com/migration"
+        }
+      ],
+      "dependencies": [],
+      "estimatedHours": 60,
+      "progress": 0,
+      "notes": "Requires maintenance window approval.",
+      "starred": false,
+      "pinned": false,
+      "createdAt": "2026-05-11",
+      "updatedAt": "2026-05-11",
+      "activity": [
+        {
+          "time": "2026-05-11",
+          "desc": "Task created"
+        }
+      ]
+    }
+  ],
+  "exportedAt": "2026-05-12T13:56:09.164Z"
+}
