@@ -203,7 +203,15 @@ All data is persisted in `localStorage` with auto-save every 1.8 seconds. The en
 ### Team Management
 - Team member cards with avatar, role, open/done/blocked counters, and workload bar
 - Workload balance suggestion when spread between members exceeds 2 tasks
-- Add new team members inline
+- **Add / Edit member modal** — replaces the old prompt() flow with a full overlay form containing:
+  - Avatar preset grid (12 emoji/icon options, each auto-selects a complementary colour)
+  - Custom avatar URL input (overrides preset when set)
+  - Dot colour picker
+  - Name (required), Role (with datalist), Department / Team, Email, Phone
+  - Skills tag-chip input (same pattern as task tags)
+- Avatar display priority on cards: custom URL → preset icon → coloured initials
+- Email shown as a clickable link below the role; skills displayed as tag chips below the workload bar
+- Edit button on each card opens the modal pre-populated with that member's data
 <table>
   <tr>
     <td align="center">
@@ -303,8 +311,12 @@ No build step. No npm install.
 
 ```bash
 # Clone the repo
-https://github.com/zainknoman/TaskTrackerPro.git
-cd taskflow-pro
+git clone https://github.com/zainknoman/TaskTracker.git
+cd TaskTracker
+
+# Set up Supabase credentials
+cp config.example.js config.js
+# Edit config.js and fill in your supabaseUrl and supabaseKey
 
 # Open directly in your browser
 open index.html
@@ -312,6 +324,8 @@ open index.html
 npx serve .        # simple static server
 python3 -m http.server 8080
 ```
+
+> **config.js is gitignored** — never commit it. Copy `config.example.js`, fill in your [Supabase](https://supabase.com) project URL and anon key, then reload the page.
 
 On first load, TaskFlow Pro seeds four demo projects (Core Banking Upgrade, Mobile App Revamp, KYC Digital Onboarding, UAE Tax Portal) with realistic tasks, milestones, and sprints so you can explore every feature immediately.
 
@@ -379,7 +393,14 @@ Click any project in the sidebar or on the Projects view to enter the **Project 
 
 ### User
 ```js
-{ id, name, role, avatar, color, team }
+{
+  id, name, role, avatar, color, team,
+  email: '',        // shown as link on team card
+  phone: '',
+  avatarUrl: '',    // custom image URL — overrides preset
+  avatarPreset: null, // index 0–11 into built-in emoji/icon list
+  skills: []        // string[] — displayed as tag chips
+}
 ```
 
 ---
@@ -440,9 +461,9 @@ Swap out `Storage.load()` and `Storage.save()` in `app.js` with `fetch()` calls 
 ## File Structure
 
 ```
-taskflow-pro/
-├── index.html      # Full app shell — all views, modals, and overlays
-├── app.js          # ~2,600 lines — complete application engine
+TaskTracker/
+├── index.html                        # Full app shell — all views, modals, and overlays
+├── app.js                            # ~2,600 lines — complete application engine
 │   ├── Constants & config
 │   ├── State management
 │   ├── Storage layer (localStorage)
@@ -452,6 +473,7 @@ taskflow-pro/
 │   ├── View renderers (Dashboard, Projects, Tasks, Kanban, Calendar, Gantt, Analytics, Team)
 │   ├── Project Detail & tabs
 │   ├── Task / Project / Milestone / Sprint forms & modals
+│   ├── Team member modal (add/edit with avatar grid & skills)
 │   ├── Notifications engine
 │   ├── Smart productivity check
 │   ├── Saved views
@@ -462,9 +484,66 @@ taskflow-pro/
 │   ├── Import / Export
 │   ├── Theme engine
 │   ├── Toast notifications
+│   ├── Supabase auth (login / sign-out)
 │   └── Init & event binding
-├── style.css       # Design system — tokens, layout, components, dark mode
+├── style.css                         # Design system — tokens, layout, components, dark mode
+├── config.js                         # Supabase credentials — gitignored, create from example
+├── config.example.js                 # Credential template committed to the repo
+├── .gitignore                        # Excludes config.js
+├── .github/
+│   └── workflows/
+│       └── deploy.yml                # GitHub Actions: injects secrets → deploys to Pages
 └── README.md
+```
+
+---
+
+## Authentication
+
+TaskFlow Pro uses [Supabase Auth](https://supabase.com/docs/guides/auth) for email/password login. Supabase is used **only for authentication** — all task and project data continues to live in `localStorage`.
+
+### How it works
+
+| Layer | Responsibility |
+|-------|---------------|
+| Supabase Auth | User login session, sign-out |
+| `localStorage` | All app data (projects, tasks, users, etc.) |
+| `config.js` | Holds `supabaseUrl` + `supabaseKey` (gitignored) |
+
+### Login flow
+1. App loads → checks for an active Supabase session
+2. No session → shows `#loginScreen`
+3. User submits email + password → `sb.auth.signInWithPassword()`
+4. Success → hides login screen, shows `#app`
+5. Sign Out button (sidebar footer) → `sb.auth.signOut()` → returns to login
+
+### Missing config.js
+If `config.js` is absent (e.g. fresh clone without setup), the app shows a clear error page directing the user to copy `config.example.js` and fill in their credentials.
+
+---
+
+## Deployment (GitHub Pages)
+
+Because `config.js` is gitignored, the GitHub Actions workflow in `.github/workflows/deploy.yml` generates it from repository secrets at deploy time — credentials are injected into the Pages artifact but never committed to git.
+
+### Setup steps
+
+1. **Add repository secrets** in GitHub → Settings → Secrets and variables → Actions:
+   - `SUPABASE_URL` — your Supabase project URL
+   - `SUPABASE_KEY` — your Supabase anon key
+
+2. **Set Pages source** in GitHub → Settings → Pages → Source → **GitHub Actions**
+
+3. Push to `main` — the workflow triggers automatically, builds `config.js` from secrets, and deploys the site.
+
+### Secret injection flow
+
+```
+Git repo (no config.js)
+  → Actions runner reads SUPABASE_URL + SUPABASE_KEY secrets
+  → Generates config.js
+  → Uploads full site (including config.js) as Pages artifact
+  → Deploys to https://zainknoman.github.io/TaskTracker/
 ```
 
 ---

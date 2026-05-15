@@ -248,4 +248,589 @@ If possible also add:
 * Printable reports
 * CSV export
 
-Build it like a real enterprise productivity tool used inside software companies and banks.
+====================================================
+
+
+## 1. PROJECT MANAGEMENT MODULE (MOST IMPORTANT)
+
+Add:
+
+### Create Project
+
+Project form should contain:
+
+* Project Name
+* Project Code
+* Description
+* Client/Department
+* Project Manager
+* BA Team
+* Start Date
+* End Date
+* Status
+* Priority
+* Budget (optional)
+* Progress
+* Tags
+* Color Theme
+* Linked Documents
+
+### Project Dashboard
+
+Each project should show:
+
+* Total Tasks
+* Completed Tasks
+* Pending Tasks
+* Project Progress %
+* Team Members
+* Open Blockers
+* Upcoming Deadlines
+* Recent Activity
+
+### Project Views
+
+Add:
+
+* Grid View
+* List View
+* Timeline View
+* Kanban per project
+* Calendar per project
+
+---
+
+# 2. TASKS MUST BELONG TO PROJECTS
+
+This is the missing architectural feature.
+
+Each task should contain:
+
+```js
+projectId
+projectName
+milestoneId
+sprintId
+parentTaskId
+```
+
+Without this:
+
+* analytics are weak
+* filtering is weak
+* scaling becomes impossible
+
+---
+
+# 3. PROJECT SIDEBAR NAVIGATION
+
+Add sidebar sections:
+
+```text
+Projects
+ ├── Core Banking Upgrade
+ ├── Mobile App Revamp
+ ├── EMI Lock System
+ ├── UAE Tax Portal
+```
+
+Clicking project should:
+
+* filter all views
+* load project dashboard
+* show project-specific analytics
+
+---
+
+# 4. PROJECT ANALYTICS
+
+Add enterprise charts:
+
+* Project Burndown
+* Task Velocity
+* BA Workload
+* Delayed Tasks
+* Blocked Tasks
+* Completion Trends
+* Time Tracking
+
+---
+
+# 5. MILESTONE MANAGEMENT
+
+Add:
+
+```text
+Project
+ └── Milestones
+      ├── Requirement Gathering
+      ├── Development
+      ├── UAT
+      ├── Production Deployment
+```
+
+Tasks should map to milestones.
+
+---
+
+# 6. SPRINT / ITERATION SUPPORT
+
+Especially useful for software companies.
+
+Add:
+
+* Sprint Name
+* Sprint Goal
+* Sprint Duration
+* Sprint Status
+* Sprint Velocity
+
+---
+
+# 7. SUBTASK SUPPORT
+
+Each task should allow:
+
+* checklist items
+* nested subtasks
+* progress auto-calculation
+
+Example:
+
+```text
+API Integration
+ ├── Create endpoint
+ ├── JWT validation
+ ├── Unit testing
+ └── Swagger docs
+```
+
+---
+
+# 8. TEAM / USER MANAGEMENT
+
+Even without backend:
+
+Add mock support for:
+
+* Users
+* Roles
+* Teams
+* Assigned Members
+* Watchers
+
+Roles:
+
+* Admin
+* Manager
+* BA
+* Developer
+* QA
+
+---
+
+# 9. ACTIVITY AUDIT LOG
+
+Enterprise systems require audit trails.
+
+Track:
+
+* Task created
+* Status changed
+* Priority changed
+* Documents added
+* Dependencies updated
+* Project reassigned
+
+---
+
+# 10. SMART ENTERPRISE FEATURES
+
+Add:
+
+## AI-like Productivity Features
+
+* Smart overdue detection
+* Dependency conflict warnings
+* Duplicate task detection
+* Workload balancing suggestions
+* Risk indicators
+* Deadline health scoring
+
+---
+
+# 11. ADVANCED DOCUMENT MANAGEMENT
+
+Instead of only URLs:
+
+Support:
+
+* Categories
+* Versioning
+* Attachment metadata
+* Preview
+* Reference linking
+
+---
+
+# 12. GANTT TIMELINE
+
+This is essential once projects exist.
+
+Should show:
+
+* Project timeline
+* Milestones
+* Dependencies
+* Critical path
+
+---
+
+# 13. SAVED FILTERS & VIEWS
+
+Enterprise users need reusable views.
+
+Examples:
+
+* My Critical Tasks
+* Blocked This Week
+* BA Pending Review
+* UAT Pending
+
+---
+
+# 14. NOTIFICATION CENTER
+
+Add:
+
+* Due reminders
+* Dependency completed
+* Task assigned
+* Milestone achieved
+
+---
+
+# 15. PRODUCTIVITY SHORTCUTS
+
+Add:
+
+* Slash commands
+* Keyboard quick actions
+* Quick task palette
+* Command center
+
+Example:
+
+```text
+/newtask
+/newproject
+/today
+/blocked
+```
+
+---
+
+# Recommended Improved Prompt
+
+Here is the missing upgraded section you should add to your original prompt.
+
+====================================================
+
+PROJECT MANAGEMENT MODULE
+=========================
+
+13. PROJECT MANAGEMENT SYSTEM
+
+The application must support full enterprise-grade project management.
+
+A Project is a parent container for tasks.
+
+Each task MUST belong to a project.
+
+Provide complete Project CRUD support.
+
+# PROJECT FEATURES
+
+Allow users to:
+
+* Create Projects
+* Edit Projects
+* Archive Projects
+* Delete Projects
+* Switch between Projects
+* Filter tasks by Project
+
+Each Project should contain:
+
+* Project Name
+* Project Code
+* Description
+* Department / Client
+* Project Manager
+* Team Members
+* Status
+* Priority
+* Start Date
+* End Date
+* Milestones
+* Sprints
+* Tags
+* Linked Documents
+* Project Progress %
+
+# PROJECT DASHBOARD
+
+Each project should have its own dashboard with:
+
+* Total Tasks
+* Completed Tasks
+* Pending Tasks
+* Blocked Tasks
+* Completion %
+* Recent Activity
+* Upcoming Deadlines
+* Team Workload
+* Analytics Charts
+
+# PROJECT SIDEBAR
+
+Add a sidebar project navigation section:
+
+Projects
+├── Core Banking
+├── EMI Lock System
+├── Mobile Banking
+├── UAE Tax Portal
+
+Clicking a project should load:
+
+* Project Dashboard
+* Project Tasks
+* Project Kanban
+* Project Calendar
+* Project Timeline
+
+# TASK RELATIONSHIP
+
+Each task MUST support:
+
+* projectId
+* milestoneId
+* sprintId
+* parentTaskId
+
+# SUBTASKS
+
+Allow nested subtasks with:
+
+* Checkbox progress
+* Completion tracking
+* Auto progress calculation
+
+# MILESTONES
+
+Allow project milestones:
+
+* Requirement Gathering
+* Development
+* UAT
+* Production Deployment
+
+# GANTT TIMELINE
+
+Provide enterprise-style timeline view showing:
+
+* Projects
+* Milestones
+* Tasks
+* Dependencies
+* Critical paths
+
+# TEAM MANAGEMENT
+
+Add support for:
+
+* Users
+* Teams
+* Roles
+* Task ownership
+* Watchers
+* Mentions
+
+Roles:
+
+* Admin
+* Manager
+* BA
+* Developer
+* QA
+
+# AUDIT HISTORY
+
+Track all activities:
+
+* Task created
+* Task edited
+* Status changed
+* Dependency updated
+* Documents added
+* Project changes
+
+# PROJECT ANALYTICS
+
+Add analytics for:
+
+* Task velocity
+* Completion trends
+* Blocked tasks
+* Overdue tasks
+* Team workload
+* Sprint progress
+* Milestone completion
+
+# LOCAL STORAGE STRUCTURE
+
+Store data in normalized format:
+
+projects[]
+tasks[]
+milestones[]
+sprints[]
+teams[]
+users[]
+activities[]
+
+All linked using IDs.
+
+This upgrade transforms the application from:
+
+* “task tracker”
+
+into:
+
+* “enterprise work management platform”
+
+similar to:
+
+* Jira
+* ClickUp
+* Asana
+* Monday.com
+* Notion
+
+---
+
+====================================================
+
+16. AUTHENTICATION & SUPABASE INTEGRATION
+==========================================
+
+Note: This feature adds user authentication via Supabase Auth.
+It does NOT change the end-user data model or UI — all task/project
+data still lives in localStorage. Supabase is used only for login sessions.
+
+## Purpose
+
+* Protect the app behind a login screen
+* Support email/password authentication
+* Enable future cloud sync (Supabase DB) without restructuring the frontend
+
+## Credentials Management
+
+Supabase credentials are NOT hardcoded in source files.
+
+Instead:
+
+* config.js — holds real credentials (gitignored, never committed)
+* config.example.js — placeholder template committed to the repo
+
+config.js shape:
+
+```js
+window.APP_CONFIG = {
+  supabaseUrl: 'https://<your-ref>.supabase.co',
+  supabaseKey: '<your-anon-key>'
+};
+```
+
+app.js reads credentials from window.APP_CONFIG:
+
+```js
+const SUPABASE_URL = window.APP_CONFIG.supabaseUrl;
+const SUPABASE_KEY = window.APP_CONFIG.supabaseKey;
+```
+
+If config.js is missing, the app shows a clear error page directing
+the user to copy config.example.js and fill in their credentials.
+
+## Login Screen
+
+* Shown on app load when no authenticated session exists
+* Fields: Email, Password
+* Calls sb.auth.signInWithPassword()
+* On success: hides #loginScreen, shows #app
+* Guest mode: not supported — login is required to access the app
+
+## Sign Out Button
+
+* Location: sidebar footer, above the theme toggle
+* Shown only when currentUser !== null
+* Calls sb.auth.signOut(), sets currentUser = null, shows login screen
+
+## Deployment & Secret Injection (GitHub Pages)
+
+Since config.js is gitignored, GitHub Pages deployments use
+GitHub Actions to inject credentials at build time:
+
+1. Store SUPABASE_URL and SUPABASE_KEY as GitHub repository secrets
+2. A GitHub Actions workflow (.github/workflows/deploy.yml) generates
+   config.js from the secrets during the deploy job
+3. The generated config.js is included in the Pages artifact but never
+   committed to the repository
+
+This means:
+* Git history never contains credentials
+* The deployed app receives credentials at runtime
+* Anyone cloning the repo copies config.example.js to get started
+
+## Team Member Modal (Add / Edit)
+
+Replaced the old two-prompt flow (name + role) with a full modal overlay
+matching the New Project modal pattern.
+
+Modal fields:
+
+* Avatar preset — grid of 12 emoji/icon options (auto-picks a color)
+* Custom avatar URL — text input; overrides preset if set
+* Color — dot color picker
+* Name — text input (required)
+* Role — text input with datalist suggestions
+* Department / Team — text input
+* Email — email input
+* Phone — text input
+* Skills — tag chip input
+
+Avatar display priority on team cards:
+1. avatarUrl set → <img> inside avatar bubble
+2. avatarPreset set → renders preset icon
+3. Fallback → colored-initials bubble
+
+Extended user schema:
+
+```js
+{
+  // existing
+  id, name, role, avatar, color, team,
+  // added
+  email: '',
+  phone: '',
+  avatarUrl: '',      // custom image URL; overrides preset
+  avatarPreset: null, // index 0–11 into preset list
+  skills: [],         // string[]
+}
+```
+
+Each team card now shows:
+* Email link (if set)
+* Skills as small tag chips below the workload bar
+* Edit button that opens the modal pre-populated with member data
