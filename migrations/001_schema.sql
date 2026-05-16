@@ -151,7 +151,6 @@ CREATE TABLE task_activity (
 );
 
 -- Indexes
-CREATE INDEX ON workspace_members (workspace_id, user_id);
 CREATE INDEX ON workspace_members (user_id);
 CREATE INDEX ON projects (workspace_id);
 CREATE INDEX ON milestones (project_id);

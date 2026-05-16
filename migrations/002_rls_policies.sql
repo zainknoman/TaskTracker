@@ -12,16 +12,20 @@ ALTER TABLE task_activity ENABLE ROW LEVEL SECURITY;
 
 -- Helper functions
 CREATE OR REPLACE FUNCTION is_workspace_member(_workspace_id uuid)
-RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE AS $$
+RETURNS boolean LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = ''
+AS $$
   SELECT EXISTS (
-    SELECT 1 FROM workspace_members
+    SELECT 1 FROM public.workspace_members
     WHERE workspace_id = _workspace_id AND user_id = auth.uid()
   );
 $$;
 
 CREATE OR REPLACE FUNCTION get_my_workspace_role(_workspace_id uuid)
-RETURNS text LANGUAGE sql SECURITY DEFINER STABLE AS $$
-  SELECT role FROM workspace_members
+RETURNS text LANGUAGE sql SECURITY DEFINER STABLE
+SET search_path = ''
+AS $$
+  SELECT role FROM public.workspace_members
   WHERE workspace_id = _workspace_id AND user_id = auth.uid()
   LIMIT 1;
 $$;
@@ -41,9 +45,15 @@ CREATE POLICY "owner remove or self-leave" ON workspace_members FOR DELETE USING
 );
 
 -- invitations (SELECT open — token is the credential)
+-- SELECT is open: token UUID (122-bit entropy) is the credential. Frontend queries by specific token only.
 CREATE POLICY "anyone read invitations" ON invitations FOR SELECT USING (true);
 CREATE POLICY "members create invitations" ON invitations FOR INSERT WITH CHECK (is_workspace_member(workspace_id));
-CREATE POLICY "accepting user update" ON invitations FOR UPDATE USING (status = 'pending');
+CREATE POLICY "accepting user update" ON invitations FOR UPDATE
+  USING (status = 'pending' AND accepted_by IS NULL)
+  WITH CHECK (accepted_by = auth.uid() AND status = 'accepted');
+CREATE POLICY "owner cancel invitation" ON invitations FOR UPDATE
+  USING (get_my_workspace_role(workspace_id) = 'owner' AND status = 'pending')
+  WITH CHECK (status = 'cancelled');
 CREATE POLICY "owner cancel" ON invitations FOR DELETE USING (get_my_workspace_role(workspace_id) = 'owner');
 
 -- projects
@@ -84,3 +94,18 @@ CREATE POLICY "non-guests log activity" ON task_activity FOR INSERT WITH CHECK (
 CREATE POLICY "own notifications" ON notifications FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "mark read" ON notifications FOR UPDATE USING (user_id = auth.uid());
 CREATE POLICY "delete own" ON notifications FOR DELETE USING (user_id = auth.uid());
+
+-- Auto-add workspace creator as owner member on workspace creation
+-- Required: without this, workspace RLS blocks the creator immediately after creation
+CREATE OR REPLACE FUNCTION auto_join_workspace_as_owner()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER AS $$
+BEGIN
+  INSERT INTO workspace_members (workspace_id, user_id, role)
+  VALUES (NEW.id, NEW.owner_id, 'owner');
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER workspace_owner_member
+  AFTER INSERT ON workspaces
+  FOR EACH ROW EXECUTE FUNCTION auto_join_workspace_as_owner();
