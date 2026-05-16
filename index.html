@@ -592,6 +592,14 @@
 <input type="file" id="importFileInput" accept=".json" hidden/>
 <div class="toast-container" id="toastContainer"></div>
 
+
+<script type="module">
+  import { sb } from './js/supabase.js';
+  import { state } from './js/state.js';
+  console.log('[verify] sb:', sb ? 'ok' : 'FAIL');
+  console.log('[verify] state:', state ? 'ok' : 'FAIL');
+</script>
+
 <script>
   // Prevent running under file:// protocol
   if (window.location.protocol === 'file:') {
