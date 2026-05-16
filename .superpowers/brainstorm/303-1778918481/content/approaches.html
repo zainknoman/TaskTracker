@@ -1,0 +1,67 @@
+<h2>Three Architectural Approaches</h2>
+<p class="subtitle">Choose the migration strategy that matches your risk tolerance and timeline</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Hybrid JSONB Bridge <span style="font-size:0.75em;color:#f59e0b;font-weight:500;">⚡ Fastest</span></h3>
+      <p>Add <code>workspaces</code> + <code>workspace_members</code> as proper relational tables. Keep tasks, projects, milestones, sprints in a single JSONB blob — but now scoped per workspace instead of per user.</p>
+      <div style="margin:10px 0;padding:10px;background:#1e293b;border-radius:8px;font-family:monospace;font-size:0.8em;color:#94a3b8;">
+        workspaces → <span style="color:#34d399;">relational ✓</span><br>
+        workspace_members → <span style="color:#34d399;">relational ✓</span><br>
+        projects / tasks / milestones → <span style="color:#f59e0b;">JSONB (workspace-scoped)</span><br>
+        invitations → <span style="color:#34d399;">relational ✓</span>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Minimal code change to Storage layer</li><li>Can ship collaboration in 2–3 weeks</li><li>Invite links work immediately</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>RLS can only protect at workspace level</li><li>Realtime: must broadcast entire blob on any change</li><li>No granular task-level permissions possible later</li><li>Technical debt — will need to normalize anyway</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Full Normalized Schema <span style="font-size:0.75em;color:#60a5fa;font-weight:500;">★ Recommended</span></h3>
+      <p>Every entity becomes a proper relational table. Supabase RLS enforces multi-tenant isolation at every level. Realtime subscriptions are per-row (only broadcast what changes). Clean module architecture built alongside.</p>
+      <div style="margin:10px 0;padding:10px;background:#1e293b;border-radius:8px;font-family:monospace;font-size:0.8em;color:#94a3b8;">
+        workspaces → <span style="color:#34d399;">relational ✓</span><br>
+        workspace_members → <span style="color:#34d399;">relational ✓</span><br>
+        projects → <span style="color:#34d399;">relational ✓</span><br>
+        tasks → <span style="color:#34d399;">relational ✓</span><br>
+        milestones / sprints → <span style="color:#34d399;">relational ✓</span><br>
+        notifications / audit_logs → <span style="color:#34d399;">relational ✓</span>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Proper RLS at every level</li><li>Efficient realtime (row-level changes only)</li><li>No future re-architecture needed</li><li>Enables task comments, mentions, audit logs</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>More tables to create and maintain</li><li>Storage layer needs full rewrite</li><li>Longer initial build (4–6 weeks)</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Incremental Normalization <span style="font-size:0.75em;color:#a78bfa;font-weight:500;">🔄 Phased</span></h3>
+      <p>Start with Approach A (hybrid JSONB), then normalize entity by entity over multiple phases. Ship collaboration fast, then improve the schema over time without a big-bang rewrite.</p>
+      <div style="margin:10px 0;padding:10px;background:#1e293b;border-radius:8px;font-family:monospace;font-size:0.8em;color:#94a3b8;">
+        Phase 1 → workspace + members (relational)<br>
+        Phase 2 → extract tasks table<br>
+        Phase 3 → extract projects table<br>
+        Phase 4 → notifications, comments, audit<br>
+        <span style="color:#a78bfa;">Each phase ships independently</span>
+      </div>
+      <div class="pros-cons" style="margin-top:10px">
+        <div class="pros"><h4>Pros</h4><ul><li>Ship collaboration quickly in Phase 1</li><li>Each phase is lower risk</li><li>End state is the same as Approach B</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Running hybrid state between phases is messy</li><li>Frontend has dual code paths during transition</li><li>Total time is longer than doing B upfront</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p style="margin-top:20px;color:#64748b;font-size:0.9em;">
+  <strong>My recommendation: Approach B.</strong> Since you're starting fresh (no users to migrate), there's no reason to carry JSONB technical debt. The full normalized schema is the right foundation for a SaaS platform — and modularizing <code>app.js</code> alongside makes both changes cleaner together.
+</p>

@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Database Schema — TaskFlow SaaS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', monospace; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 1.4em; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { color: #64748b; font-size: 0.85em; margin-bottom: 24px; }
+
+  .erd { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+  .table-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table-card.primary { border-color: #3b82f6; }
+  .table-card.auth-core { border-color: #10b981; }
+
+  .table-header {
+    background: #334155;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .table-card.primary .table-header { background: #1d4ed8; color: #fff; }
+  .table-card.auth-core .table-header { background: #065f46; color: #d1fae5; }
+
+  .table-body { padding: 8px 0; }
+  .field {
+    padding: 3px 12px;
+    font-size: 0.76em;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    color: #94a3b8;
+    border-bottom: 1px solid #1e293b;
+  }
+  .field:last-child { border-bottom: none; }
+  .field .fname { color: #e2e8f0; }
+  .field .fname.pk { color: #fbbf24; }
+  .field .fname.fk { color: #60a5fa; }
+  .field .ftype { color: #475569; font-size: 0.9em; }
+  .field .badge {
+    font-size: 0.75em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: #0f172a;
+    flex-shrink: 0;
+  }
+  .badge.pk { color: #fbbf24; border: 1px solid #78350f; }
+  .badge.fk { color: #60a5fa; border: 1px solid #1e3a8a; }
+  .badge.rls { color: #34d399; border: 1px solid #064e3b; }
+  .badge.unique { color: #a78bfa; border: 1px solid #4c1d95; }
+
+  .section-label {
+    grid-column: 1 / -1;
+    font-size: 0.75em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #475569;
+    padding: 8px 0 4px 0;
+    border-bottom: 1px solid #1e293b;
+    margin-bottom: 4px;
+  }
+
+  .legend {
+    display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap;
+    background: #1e293b; border-radius: 8px; padding: 10px 14px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78em; }
+  .dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  .notes {
+    grid-column: 1 / -1;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 0.8em;
+    color: #64748b;
+    margin-top: 8px;
+  }
+  .notes h3 { color: #94a3b8; margin-bottom: 8px; font-size: 0.9em; }
+  .notes ul { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+  .notes li::before { content: "→ "; color: #3b82f6; }
+</style>
+</head>
+<body>
+<h1>TaskFlow SaaS — Database Schema (ERD)</h1>
+<p class="subtitle">New Supabase project: zynunureylcdexxhvdth &nbsp;·&nbsp; Approach B: Full Normalized</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="dot" style="background:#fbbf24"></div> Primary Key</div>
+  <div class="legend-item"><div class="dot" style="background:#60a5fa"></div> Foreign Key</div>
+  <div class="legend-item"><div class="dot" style="background:#34d399"></div> RLS Enforced</div>
+  <div class="legend-item"><div class="dot" style="background:#a78bfa"></div> Unique Constraint</div>
+  <div class="legend-item"><div class="dot" style="background:#1d4ed8"></div> Core/Primary Table</div>
+  <div class="legend-item"><div class="dot" style="background:#065f46"></div> Auth-linked Table</div>
+</div>
+
+<div class="erd">
+
+  <div class="section-label">── WORKSPACE LAYER ─────────────────────────────────────────────────────────────────────────────────────</div>
+
+  <div class="table-card primary">
+    <div class="table-header">🏢 workspaces</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">slug</span><span class="ftype">text</span><span class="badge unique">UNIQUE</span></div>
+      <div class="field"><span class="fname fk">owner_id</span><span class="ftype">uuid → auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">plan_type</span><span class="ftype">text 'free'</span></div>
+      <div class="field"><span class="fname">settings</span><span class="ftype">jsonb '{}'</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field"><span class="fname">updated_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: owner_id = auth.uid()</span></div>
+    </div>
+  </div>
+
+  <div class="table-card primary">
+    <div class="table-header">👥 workspace_members</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">user_id</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">role</span><span class="ftype">'owner'|'member'|'guest'</span></div>
+      <div class="field"><span class="fname">display_name</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">avatar_url</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">avatar_preset</span><span class="ftype">int</span></div>
+      <div class="field"><span class="fname">color</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">skills</span><span class="ftype">text[]</span></div>
+      <div class="field"><span class="fname">joined_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#a78bfa;font-size:0.85em;">UNIQUE(workspace_id, user_id)</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: member of workspace</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">📨 invitations</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">invited_by</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">token</span><span class="ftype">text</span><span class="badge unique">UNIQUE</span></div>
+      <div class="field"><span class="fname">role</span><span class="ftype">'member'|'guest'</span></div>
+      <div class="field"><span class="fname">label</span><span class="ftype">text (optional)</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">'pending'|'accepted'|'cancelled'</span></div>
+      <div class="field"><span class="fname fk">accepted_by</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">expires_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: token lookup public</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">🔔 notifications</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">user_id</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">type</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">title</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">body</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">entity_type</span><span class="ftype">'task'|'project'|'workspace'</span></div>
+      <div class="field"><span class="fname fk">entity_id</span><span class="ftype">uuid</span></div>
+      <div class="field"><span class="fname">read</span><span class="ftype">boolean false</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: user_id = auth.uid()</span></div>
+    </div>
+  </div>
+
+  <div class="section-label">── PROJECT LAYER ──────────────────────────────────────────────────────────────────────────────────────────</div>
+
+  <div class="table-card primary">
+    <div class="table-header">📁 projects</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">code</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">description</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">department</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">client</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">pm</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">ba_team</span><span class="ftype">text[]</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">'active'|'planning'|'onhold'|'completed'|'archived'</span></div>
+      <div class="field"><span class="fname">priority</span><span class="ftype">'low'|'medium'|'high'|'critical'</span></div>
+      <div class="field"><span class="fname">start_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">end_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">budget</span><span class="ftype">numeric</span></div>
+      <div class="field"><span class="fname">color</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">tags</span><span class="ftype">text[]</span></div>
+      <div class="field"><span class="fname fk">created_by</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field"><span class="fname">updated_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">🏁 milestones</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">project_id</span><span class="ftype">→ projects</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">description</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">due_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">'pending'|'completed'</span></div>
+      <div class="field"><span class="fname">sort_order</span><span class="ftype">int</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">🔄 sprints</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">project_id</span><span class="ftype">→ projects</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">name</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">goal</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">start_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">end_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">'planning'|'active'|'completed'</span></div>
+      <div class="field"><span class="fname">velocity</span><span class="ftype">int</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member</span></div>
+    </div>
+  </div>
+
+  <div class="table-card" style="grid-column: span 1;">
+    <div class="table-header" style="background:#4c1d95">🔗 indexes</div>
+    <div class="table-body">
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">workspace_members</span>
+        <span style="color:#64748b;font-size:0.75em;">(workspace_id, user_id)</span>
+      </div>
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">projects</span>
+        <span style="color:#64748b;font-size:0.75em;">(workspace_id)</span>
+      </div>
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">tasks</span>
+        <span style="color:#64748b;font-size:0.75em;">(workspace_id, project_id)</span>
+        <span style="color:#64748b;font-size:0.75em;">(assignee_id)</span>
+        <span style="color:#64748b;font-size:0.75em;">(status, due_date)</span>
+      </div>
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">notifications</span>
+        <span style="color:#64748b;font-size:0.75em;">(user_id, read)</span>
+      </div>
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">invitations</span>
+        <span style="color:#64748b;font-size:0.75em;">(token) — for invite lookup</span>
+      </div>
+      <div class="field" style="flex-direction:column;gap:2px">
+        <span style="color:#a78bfa;font-size:0.8em;font-weight:600;">task_activity</span>
+        <span style="color:#64748b;font-size:0.75em;">(task_id, created_at)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">── TASK LAYER ──────────────────────────────────────────────────────────────────────────────────────────────</div>
+
+  <div class="table-card primary" style="grid-column: span 2;">
+    <div class="table-header">✅ tasks</div>
+    <div class="table-body" style="display:grid;grid-template-columns:1fr 1fr">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">project_id</span><span class="ftype">→ projects</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">milestone_id</span><span class="ftype">→ milestones</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">sprint_id</span><span class="ftype">→ sprints</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">parent_task_id</span><span class="ftype">→ tasks (self)</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">title</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">description</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">priority</span><span class="ftype">'low'|'medium'|'high'|'critical'</span></div>
+      <div class="field"><span class="fname">status</span><span class="ftype">'pending'|'inprogress'|'completed'|'blocked'</span></div>
+      <div class="field"><span class="fname">start_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">due_date</span><span class="ftype">date</span></div>
+      <div class="field"><span class="fname">ba</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname fk">assignee_id</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">estimated_hours</span><span class="ftype">numeric</span></div>
+      <div class="field"><span class="fname">actual_hours</span><span class="ftype">numeric</span></div>
+      <div class="field"><span class="fname">progress</span><span class="ftype">int 0–100</span></div>
+      <div class="field"><span class="fname">tags</span><span class="ftype">text[]</span></div>
+      <div class="field"><span class="fname">documents</span><span class="ftype">jsonb '[]'</span></div>
+      <div class="field"><span class="fname">dependencies</span><span class="ftype">uuid[] (task IDs)</span></div>
+      <div class="field"><span class="fname">subtasks</span><span class="ftype">jsonb '[]'</span></div>
+      <div class="field"><span class="fname">notes</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">starred</span><span class="ftype">boolean false</span></div>
+      <div class="field"><span class="fname">pinned</span><span class="ftype">boolean false</span></div>
+      <div class="field"><span class="fname fk">created_by</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field"><span class="fname">updated_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e;grid-column:span 2"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member · Owner/Member=write · Guest=read-only</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">💬 task_comments</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">task_id</span><span class="ftype">→ tasks</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">author_id</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">content</span><span class="ftype">text NOT NULL</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field"><span class="fname">updated_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member</span></div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-header">📋 task_activity</div>
+    <div class="table-body">
+      <div class="field"><span class="fname pk">id</span><span class="ftype">uuid</span><span class="badge pk">PK</span></div>
+      <div class="field"><span class="fname fk">workspace_id</span><span class="ftype">→ workspaces</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">task_id</span><span class="ftype">→ tasks</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname fk">actor_id</span><span class="ftype">→ auth.users</span><span class="badge fk">FK</span></div>
+      <div class="field"><span class="fname">action</span><span class="ftype">text (e.g. 'status_changed')</span></div>
+      <div class="field"><span class="fname">old_value</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">new_value</span><span class="ftype">text</span></div>
+      <div class="field"><span class="fname">description</span><span class="ftype">text (human readable)</span></div>
+      <div class="field"><span class="fname">created_at</span><span class="ftype">timestamptz</span></div>
+      <div class="field" style="background:#0c1a2e"><span style="color:#34d399;font-size:0.85em;">RLS: workspace member · INSERT only, no UPDATE/DELETE</span></div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <h3>Design Notes</h3>
+    <ul>
+      <li><strong>workspace_id denormalized on every table</strong> — enables fast RLS checks without joins. Every query is workspace-scoped at the row level.</li>
+      <li><strong>subtasks & documents stay JSONB</strong> — they're always loaded with the parent task, never queried independently. No benefit to normalizing.</li>
+      <li><strong>task_activity is append-only</strong> — RLS denies UPDATE and DELETE. Immutable audit trail.</li>
+      <li><strong>invitations.token is a public lookup</strong> — RLS allows SELECT by token for unauthenticated invite acceptance flow (before the user logs in).</li>
+      <li><strong>assignee_id vs ba field</strong> — assignee_id links to real auth users; ba stays as a text field for backward compatibility with the existing team model.</li>
+      <li><strong>Realtime enabled on: tasks, projects, milestones, sprints, notifications</strong> — not on task_activity (append-only, polled instead).</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RLS + Module Structure — TaskFlow SaaS</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f172a; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; padding: 24px; min-height: 100vh; }
+  h1 { font-size: 1.3em; color: #f8fafc; margin-bottom: 4px; }
+  .subtitle { color: #64748b; font-size: 0.82em; margin-bottom: 20px; }
+  h2 { font-size: 1em; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin: 24px 0 12px; padding-bottom: 6px; border-bottom: 1px solid #1e293b; }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* Permission Matrix */
+  .matrix-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.78em; }
+  th { background: #1e293b; padding: 8px 10px; text-align: center; color: #94a3b8; font-weight: 600; font-size: 0.85em; white-space: nowrap; }
+  th.action-col { text-align: left; color: #64748b; }
+  td { padding: 6px 10px; text-align: center; border-bottom: 1px solid #1e293b; }
+  td.action-label { text-align: left; color: #94a3b8; font-size: 0.9em; white-space: nowrap; }
+  .allow { color: #34d399; font-size: 1.1em; }
+  .deny { color: #f87171; font-size: 1.1em; }
+  .own-only { color: #fbbf24; font-size: 0.75em; font-weight: 600; }
+  tr:hover td { background: #1a2540; }
+
+  /* RLS Policy cards */
+  .policy-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .policy-header {
+    background: #0f172a;
+    padding: 8px 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .policy-header .table-name { color: #60a5fa; }
+  .policy-header .op { font-size: 0.85em; padding: 2px 7px; border-radius: 4px; }
+  .op.select { background: #064e3b; color: #34d399; }
+  .op.insert { background: #1e3a8a; color: #93c5fd; }
+  .op.update { background: #78350f; color: #fcd34d; }
+  .op.delete { background: #7f1d1d; color: #fca5a5; }
+  .op.all { background: #312e81; color: #c4b5fd; }
+  .policy-body {
+    padding: 10px 12px;
+    font-family: monospace;
+    font-size: 0.75em;
+    color: #94a3b8;
+    background: #0d1829;
+    line-height: 1.6;
+  }
+  .policy-body .kw { color: #60a5fa; }
+  .policy-body .fn { color: #a78bfa; }
+  .policy-body .str { color: #34d399; }
+  .policy-body .comment { color: #475569; }
+
+  /* Module tree */
+  .module-tree {
+    background: #0d1829;
+    border: 1px solid #1e3a5f;
+    border-radius: 10px;
+    padding: 16px;
+    font-family: monospace;
+    font-size: 0.8em;
+    line-height: 1.8;
+  }
+  .tree-dir { color: #60a5fa; font-weight: 700; }
+  .tree-file { color: #94a3b8; }
+  .tree-file .desc { color: #475569; font-size: 0.9em; margin-left: 4px; }
+  .tree-new { color: #34d399; }
+  .tree-new .desc { color: #065f46; }
+  .tree-modified { color: #fbbf24; }
+
+  /* Invite flow */
+  .flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .flow-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+  }
+  .step-line {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 32px;
+  }
+  .step-num {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #1d4ed8;
+    color: #fff;
+    font-size: 0.8em;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-connector {
+    width: 2px;
+    flex: 1;
+    min-height: 20px;
+    background: #1e3a8a;
+    margin: 3px 0;
+  }
+  .flow-step:last-child .step-connector { display: none; }
+  .step-content {
+    padding: 2px 0 20px;
+    flex: 1;
+  }
+  .step-content h4 { font-size: 0.85em; color: #e2e8f0; margin-bottom: 2px; }
+  .step-content p { font-size: 0.78em; color: #64748b; line-height: 1.4; }
+  .step-content code { color: #a78bfa; font-family: monospace; font-size: 0.95em; }
+
+  /* Realtime */
+  .rt-card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+  .rt-card h4 { font-size: 0.82em; color: #60a5fa; margin-bottom: 6px; font-weight: 700; }
+  .rt-card p { font-size: 0.76em; color: #64748b; line-height: 1.5; }
+  .rt-card code { color: #a78bfa; font-family: monospace; font-size: 0.9em; }
+  .rt-tag { display: inline-block; font-size: 0.72em; padding: 1px 6px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; }
+  .rt-tag.ins { background: #064e3b; color: #34d399; }
+  .rt-tag.upd { background: #78350f; color: #fcd34d; }
+  .rt-tag.del { background: #7f1d1d; color: #fca5a5; }
+
+  .warning-box {
+    background: #2d1a00;
+    border: 1px solid #78350f;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 0.78em;
+    color: #fcd34d;
+    margin-top: 12px;
+  }
+  .warning-box strong { color: #f59e0b; }
+</style>
+</head>
+<body>
+<h1>RLS Policies · Module Structure · Invite Flow · Realtime</h1>
+<p class="subtitle">Security-first design for the TaskFlow SaaS multi-tenant platform</p>
+
+<!-- PERMISSION MATRIX -->
+<h2>RBAC Permission Matrix — 3-Tier Roles</h2>
+<div class="matrix-wrap">
+<table>
+  <thead>
+    <tr>
+      <th class="action-col">Action</th>
+      <th>Owner</th>
+      <th>Member</th>
+      <th>Guest</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="action-label" colspan="4" style="background:#111827;color:#475569;font-size:0.85em;padding:4px 10px;">WORKSPACE</td></tr>
+    <tr><td class="action-label">Rename workspace</td><td class="allow">✓</td><td class="deny">✗</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Invite members</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Change member roles</td><td class="allow">✓</td><td class="deny">✗</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Remove members</td><td class="allow">✓</td><td class="deny">✗</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Delete workspace</td><td class="allow">✓</td><td class="deny">✗</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label" colspan="4" style="background:#111827;color:#475569;font-size:0.85em;padding:4px 10px;">PROJECTS</td></tr>
+    <tr><td class="action-label">View projects</td><td class="allow">✓</td><td class="allow">✓</td><td class="allow">✓</td></tr>
+    <tr><td class="action-label">Create project</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Edit project</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Delete project</td><td class="allow">✓</td><td class="own-only">own only</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label" colspan="4" style="background:#111827;color:#475569;font-size:0.85em;padding:4px 10px;">TASKS</td></tr>
+    <tr><td class="action-label">View tasks</td><td class="allow">✓</td><td class="allow">✓</td><td class="allow">✓</td></tr>
+    <tr><td class="action-label">Create task</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Edit any task</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Delete task</td><td class="allow">✓</td><td class="own-only">own only</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Assign task</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Change status</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+    <tr><td class="action-label">Comment on task</td><td class="allow">✓</td><td class="allow">✓</td><td class="deny">✗</td></tr>
+  </tbody>
+</table>
+</div>
+<p style="font-size:0.75em;color:#475569;margin-top:6px;">Note: "own only" means the RLS policy checks <code>created_by = auth.uid()</code> in addition to workspace membership.</p>
+
+<!-- RLS POLICIES -->
+<h2>Row Level Security — Key Policies</h2>
+<div class="two-col">
+  <div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">workspaces</span><span class="op select">SELECT</span></div>
+      <div class="policy-body">
+        <span class="comment">-- Members can see their workspaces</span><br>
+        <span class="fn">auth.uid</span>() <span class="kw">IN</span> (<br>
+        &nbsp;&nbsp;<span class="kw">SELECT</span> user_id <span class="kw">FROM</span> workspace_members<br>
+        &nbsp;&nbsp;<span class="kw">WHERE</span> workspace_id = id<br>
+        )
+      </div>
+    </div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">workspace_members</span><span class="op select">SELECT</span></div>
+      <div class="policy-body">
+        <span class="comment">-- See members of your workspaces</span><br>
+        workspace_id <span class="kw">IN</span> (<br>
+        &nbsp;&nbsp;<span class="kw">SELECT</span> workspace_id <span class="kw">FROM</span> workspace_members<br>
+        &nbsp;&nbsp;<span class="kw">WHERE</span> user_id = <span class="fn">auth.uid</span>()<br>
+        )
+      </div>
+    </div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">invitations</span><span class="op select">SELECT</span></div>
+      <div class="policy-body">
+        <span class="comment">-- Public token lookup (for invite page)</span><br>
+        <span class="comment">-- OR workspace member viewing invites</span><br>
+        token <span class="kw">IS NOT NULL</span> <span class="comment">-- anyone with token</span><br>
+        <span class="kw">OR</span> workspace_id <span class="kw">IN</span> (<br>
+        &nbsp;&nbsp;<span class="kw">SELECT</span> workspace_id <span class="kw">FROM</span> workspace_members<br>
+        &nbsp;&nbsp;<span class="kw">WHERE</span> user_id = <span class="fn">auth.uid</span>()<br>
+        )
+      </div>
+    </div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">tasks</span><span class="op delete">DELETE</span></div>
+      <div class="policy-body">
+        <span class="comment">-- Owner can delete any task</span><br>
+        <span class="comment">-- Member can only delete own tasks</span><br>
+        workspace_id <span class="kw">IN</span> (members_subquery)<br>
+        <span class="kw">AND</span> (<br>
+        &nbsp;&nbsp;<span class="fn">get_my_role</span>(workspace_id) = <span class="str">'owner'</span><br>
+        &nbsp;&nbsp;<span class="kw">OR</span> created_by = <span class="fn">auth.uid</span>()<br>
+        )
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">projects / tasks / milestones / sprints</span><span class="op all">ALL OPS</span></div>
+      <div class="policy-body">
+        <span class="comment">-- All share the same workspace membership check</span><br>
+        <span class="comment">-- Helper function (run once in migration):</span><br>
+        <span class="kw">CREATE OR REPLACE FUNCTION</span> <span class="fn">is_workspace_member</span>(<br>
+        &nbsp;&nbsp;_workspace_id uuid<br>
+        ) <span class="kw">RETURNS</span> boolean <span class="kw">AS</span> $$<br>
+        &nbsp;&nbsp;<span class="kw">SELECT EXISTS</span> (<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">SELECT</span> 1 <span class="kw">FROM</span> workspace_members<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">WHERE</span> workspace_id = _workspace_id<br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">AND</span> user_id = <span class="fn">auth.uid</span>()<br>
+        &nbsp;&nbsp;);<br>
+        $$ <span class="kw">LANGUAGE</span> sql SECURITY DEFINER;
+      </div>
+    </div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">task_activity</span><span class="op all">ALL OPS</span></div>
+      <div class="policy-body">
+        <span class="comment">-- Append-only: no UPDATE or DELETE allowed</span><br>
+        <span class="comment">-- SELECT / INSERT: workspace member only</span><br>
+        <span class="comment">-- UPDATE policy: FALSE (blocks all updates)</span><br>
+        <span class="comment">-- DELETE policy: FALSE (immutable log)</span>
+      </div>
+    </div>
+    <div class="policy-card">
+      <div class="policy-header"><span class="table-name">notifications</span><span class="op all">ALL OPS</span></div>
+      <div class="policy-body">
+        <span class="comment">-- Users only see their own notifications</span><br>
+        user_id = <span class="fn">auth.uid</span>()<br><br>
+        <span class="comment">-- INSERT: done via DB trigger on task events</span><br>
+        <span class="comment">-- (not by frontend directly)</span>
+      </div>
+    </div>
+    <div class="warning-box">
+      <strong>⚠ Common RLS mistakes to avoid:</strong><br>
+      1. Forgetting to enable RLS on a table (data is public by default)<br>
+      2. SELECT policies that don't scope to workspace_id — can leak cross-tenant data<br>
+      3. Allowing INSERT on notifications from the frontend — use DB triggers instead<br>
+      4. Not using SECURITY DEFINER on helper functions — can bypass RLS
+    </div>
+  </div>
+</div>
+
+<!-- MODULE STRUCTURE -->
+<h2>Frontend Module Structure (ES Modules)</h2>
+<div class="two-col">
+  <div class="module-tree">
+    <span class="tree-dir">TaskTracker/</span><br>
+    ├── index.html &nbsp;<span style="color:#475569;font-size:0.85em">(modified — add module script tags)</span><br>
+    ├── style.css &nbsp;<span style="color:#475569;font-size:0.85em">(modified — add workspace/collab styles)</span><br>
+    ├── config.js &nbsp;<span style="color:#fbbf24;font-size:0.85em">← update to new Supabase project</span><br>
+    ├── config.example.js<br>
+    ├── <span class="tree-dir">js/</span> &nbsp;<span style="color:#34d399;font-size:0.85em">(new directory)</span><br>
+    │ ├── <span class="tree-new">supabase.js</span> <span class="tree-new desc">— createClient, export sb</span><br>
+    │ ├── <span class="tree-new">auth.js</span> <span class="tree-new desc">— login, logout, session, onboarding</span><br>
+    │ ├── <span class="tree-new">workspace.js</span> <span class="tree-new desc">— workspace CRUD, member mgmt</span><br>
+    │ ├── <span class="tree-new">invitations.js</span> <span class="tree-new desc">— create/accept/cancel invite links</span><br>
+    │ ├── <span class="tree-new">permissions.js</span> <span class="tree-new desc">— canEdit(), canDelete(), getRole()</span><br>
+    │ ├── <span class="tree-new">realtime.js</span> <span class="tree-new desc">— Supabase Realtime subscriptions</span><br>
+    │ ├── <span class="tree-new">storage.js</span> <span class="tree-new desc">— all DB reads/writes (replaces Storage object)</span><br>
+    │ ├── <span class="tree-new">state.js</span> <span class="tree-new desc">— global state, mutations, derived helpers</span><br>
+    │ ├── <span class="tree-new">notifications.js</span> <span class="tree-new desc">— load, mark-read, realtime bell</span><br>
+    │ └── <span class="tree-dir">ui/</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-new">workspace-switcher.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">dashboard.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">projects.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">tasks.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">kanban.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">calendar.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">gantt.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;├── <span class="tree-modified">analytics.js</span><br>
+    │ &nbsp;&nbsp;&nbsp;└── <span class="tree-modified">team.js</span><br>
+    └── app.js &nbsp;<span style="color:#fbbf24;font-size:0.85em">(becomes thin entry point — init + routing only)</span>
+  </div>
+  <div>
+    <div class="rt-card" style="border-color:#1d4ed8">
+      <h4>storage.js — replaces the old Storage object</h4>
+      <p>All Supabase DB operations live here. Each function maps to one table:<br>
+      <code>loadTasks(workspaceId)</code>, <code>saveTask(task)</code>, <code>deleteTask(id)</code><br>
+      <code>loadProjects(workspaceId)</code>, <code>saveProject(project)</code><br>
+      No more loading the entire state blob — every read/write is targeted.</p>
+    </div>
+    <div class="rt-card" style="border-color:#059669">
+      <h4>state.js — single source of truth</h4>
+      <p>Still a global state object, but now loaded from individual table reads rather than one blob.
+      Mutations go through explicit functions (<code>setState()</code>, <code>updateTask()</code>)
+      that also trigger a <code>scheduleSave()</code> to Supabase for that specific entity only.</p>
+    </div>
+    <div class="rt-card" style="border-color:#7c3aed">
+      <h4>permissions.js — permission guards</h4>
+      <p>Role checked once at load, stored in state. Guards are synchronous:<br>
+      <code>canEdit(entityType)</code> → true/false<br>
+      <code>canDelete(entity)</code> → checks role + ownership<br>
+      <code>getMyRole()</code> → 'owner' | 'member' | 'guest'<br>
+      UI elements hide/disable based on these guards.</p>
+    </div>
+    <div class="rt-card" style="border-color:#d97706">
+      <h4>app.js becomes a thin entry point</h4>
+      <p>Only handles: import all modules → init auth → check session → load workspace →
+      set up realtime → render initial view → bind global keyboard shortcuts.
+      No business logic. Target: under 200 lines.</p>
+    </div>
+  </div>
+</div>
+
+<!-- INVITE FLOW -->
+<h2>Invite Link Flow (No Email Required)</h2>
+<div class="two-col">
+  <div class="flow">
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">1</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>Owner clicks "Invite Member"</h4>
+        <p>Opens invite modal. Selects role (Member or Guest). Optionally adds a label (e.g. "For Zain — Developer").</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">2</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>Frontend generates token + inserts row</h4>
+        <p>Calls <code>crypto.randomUUID()</code> for a secure token. Inserts into <code>invitations</code> table: token, workspace_id, role, expires_at (7 days).</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">3</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>Shareable link displayed</h4>
+        <p>UI shows: <code>https://zainknoman.github.io/TaskTracker/?invite=&lt;token&gt;</code><br>
+        Owner copies it and sends via Slack, WhatsApp, email, etc.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">4</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>Invitee opens link</h4>
+        <p>App detects <code>?invite=token</code> in URL. Fetches invitation row by token (public RLS). Shows workspace name + role. Prompts to log in or sign up.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">5</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>After auth: accept invitation</h4>
+        <p>Calls <code>acceptInvitation(token, userId)</code>. Inserts into <code>workspace_members</code>. Sets invitation status to <code>'accepted'</code>. Token is now consumed.</p>
+      </div>
+    </div>
+    <div class="flow-step">
+      <div class="step-line"><div class="step-num">6</div><div class="step-connector"></div></div>
+      <div class="step-content">
+        <h4>Redirect to workspace</h4>
+        <p>URL param cleared. App loads the workspace. Member sees all projects and tasks. Role determines what they can do.</p>
+      </div>
+    </div>
+  </div>
+  <div>
+    <!-- Realtime -->
+    <h2 style="margin-top:0">Realtime Strategy (Live Sync Only)</h2>
+    <div class="rt-card">
+      <h4>Channel: workspace-{workspace_id}</h4>
+      <p>Single channel per workspace. Subscribes to changes on <code>tasks</code>, <code>projects</code>, <code>milestones</code>, <code>sprints</code> filtered by <code>workspace_id</code>.<br><br>
+      Events: <span class="rt-tag ins">INSERT</span><span class="rt-tag upd">UPDATE</span><span class="rt-tag del">DELETE</span><br>
+      Handler: update local state → re-render affected view only (not full page).</p>
+    </div>
+    <div class="rt-card">
+      <h4>Channel: user-{user_id}</h4>
+      <p>Per-user channel for notifications. Subscribes to <code>notifications</code> table filtered by <code>user_id</code>.<br>
+      Events: <span class="rt-tag ins">INSERT</span> → update bell badge count + append to notification list.</p>
+    </div>
+    <div class="rt-card">
+      <h4>Optimistic updates</h4>
+      <p>Frontend updates local state immediately on user action (no waiting for DB confirmation). If the Supabase write fails, the state is rolled back and a toast error shown. The realtime event from the successful write is ignored if it matches local state (idempotent merge).</p>
+    </div>
+    <div class="rt-card" style="border-color:#334155">
+      <h4>Not on Realtime: task_activity</h4>
+      <p><code>task_activity</code> is append-only. No realtime subscription — activity log is fetched on demand when a task detail modal opens. Avoids noisy channel events for every log insert.</p>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
