@@ -2,7 +2,7 @@
    CALENDAR
    ════════════════════════════════════════════════════════════ */
 import { state, getActiveTasks, findProject } from '../state.js';
-import { $id, esc, fmtDate, daysUntil, STATUS_META, PRIORITY_META, toast } from '../utils.js';
+import { $id, esc, fmtDate, daysUntil, today, STATUS_META, PRIORITY_META, toast } from '../utils.js';
 
 export function renderCalendar() {
   const d = state.calendarDate;
@@ -21,7 +21,7 @@ export function renderCalendar() {
   for (let day = 1; day <= daysInMonth; day++) {
     const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     const isToday = ds === todayStr;
-    const dayTasks = state.tasks.filter(t => t.dueDate === ds);
+    const dayTasks = state.tasks.filter(t => t.due_date === ds);
     html += `<div class="cal-cell${isToday?' today':''}">
       <div class="cal-date">${day}</div>
       ${dayTasks.slice(0,3).map(t=>`<div class="cal-task-dot ${t.status}" data-id="${t.id}" title="${esc(t.title)}">${esc(t.title)}</div>`).join('')}
@@ -30,5 +30,5 @@ export function renderCalendar() {
   }
   html += `</div>`;
   wrap.innerHTML = html;
-  wrap.querySelectorAll('.cal-task-dot[data-id]').forEach(el => el.addEventListener('click', () => openTaskDetail(el.dataset.id)));
+  wrap.querySelectorAll('.cal-task-dot[data-id]').forEach(el => el.addEventListener('click', () => window.openTaskDetail?.(el.dataset.id)));
 }

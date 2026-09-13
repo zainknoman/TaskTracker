@@ -17,8 +17,8 @@ export async function signIn(email, password) {
 export async function signUp(email, password) {
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) throw error;
-  setState({ currentUser: data.user });
-  return data.user;
+  if (data.user) setState({ currentUser: data.user });
+  return data;
 }
 
 export async function signOut() {

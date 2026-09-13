@@ -12,35 +12,12 @@ export async function createInvitation(workspaceId, invitedBy, role, label) {
 }
 
 export async function acceptInvitation(token, userId) {
-  // Look up invitation
-  const { data: inv, error: fetchErr } = await sb
-    .from('invitations').select('*, workspaces(name)').eq('token', token).maybeSingle();
-  if (fetchErr) throw fetchErr;
-  if (!inv) throw new Error('Invite link not found');
-  if (inv.status !== 'pending') throw new Error('This invite link has already been used or cancelled');
-  if (new Date(inv.expires_at) < new Date()) throw new Error('This invite link has expired');
-
-  // Check if already a member
-  const { data: existing } = await sb.from('workspace_members')
-    .select('id').eq('workspace_id', inv.workspace_id).eq('user_id', userId).maybeSingle();
-  if (existing) {
-    // Already a member — mark invite as accepted and return
-    await sb.from('invitations').update({ status: 'accepted', accepted_by: userId }).eq('id', inv.id);
-    return { workspace_id: inv.workspace_id, workspace_name: inv.workspaces?.name };
-  }
-
-  // Add member
-  const { error: memErr } = await sb.from('workspace_members').insert({
-    workspace_id: inv.workspace_id,
-    user_id:      userId,
-    role:         inv.role,
+  const { data, error } = await sb.rpc('accept_invitation', {
+    p_token:   token,
+    p_user_id: userId,
   });
-  if (memErr) throw memErr;
-
-  // Mark invite accepted
-  await sb.from('invitations').update({ status: 'accepted', accepted_by: userId }).eq('id', inv.id);
-
-  return { workspace_id: inv.workspace_id, workspace_name: inv.workspaces?.name };
+  if (error) throw error;
+  return data; // { workspace_id, workspace_name }
 }
 
 export async function cancelInvitation(invitationId) {

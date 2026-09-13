@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════
    GANTT TIMELINE
    ════════════════════════════════════════════════════════════ */
-import { state, getActiveTasks, findProject } from '../state.js';
+import { state, getActiveTasks, getProjectTasks, findProject } from '../state.js';
 import { $id, esc, fmtDate, daysUntil, STATUS_META, PRIORITY_META, toast } from '../utils.js';
 
 export function renderGantt() {
@@ -38,20 +38,20 @@ export function renderGantt() {
     const pE = p.end_date   ? barPct(p.end_date)   : '100';
     const pW = Math.max(0.5, parseFloat(pE) - parseFloat(pS));
     rightRows.push(`<div class="gantt-row-right"><div class="gantt-bar" style="left:${pS}%;width:${pW}%;background:${p.color}" title="${esc(p.name)}">${esc(p.name)}</div></div>`);
-    state.milestones.filter(m => m.projectId === p.id).forEach(m => {
+    state.milestones.filter(m => m.project_id === p.id).forEach(m => {
       leftRows.push(`<div class="gantt-row-left milestone-row">◆ <span class="gantt-row-name" title="${esc(m.name)}">${esc(m.name)}</span></div>`);
-      if (m.dueDate) {
-        const mPct = barPct(m.dueDate);
-        rightRows.push(`<div class="gantt-row-right"><div class="gantt-milestone-marker" style="left:${mPct}%;background:${STATUS_META[m.status]?.dot || '#fbbf24'}" title="${esc(m.name)} — ${fmtDate(m.dueDate)}"></div></div>`);
+      if (m.due_date) {
+        const mPct = barPct(m.due_date);
+        rightRows.push(`<div class="gantt-row-right"><div class="gantt-milestone-marker" style="left:${mPct}%;background:${STATUS_META[m.status]?.dot || '#fbbf24'}" title="${esc(m.name)} — ${fmtDate(m.due_date)}"></div></div>`);
       } else {
         rightRows.push(`<div class="gantt-row-right"></div>`);
       }
     });
     getProjectTasks(p.id).forEach(t => {
-      if (!t.startDate && !t.dueDate) return;
+      if (!t.start_date && !t.due_date) return;
       leftRows.push(`<div class="gantt-row-left task-row"><span class="gantt-row-name" title="${esc(t.title)}" data-id="${t.id}">${esc(t.title)}</span></div>`);
-      const tS = t.startDate ? barPct(t.startDate) : barPct(t.dueDate || todayDate.toISOString().split('T')[0]);
-      const tE = t.dueDate   ? barPct(t.dueDate)   : tS;
+      const tS = t.start_date ? barPct(t.start_date) : barPct(t.due_date || todayDate.toISOString().split('T')[0]);
+      const tE = t.due_date   ? barPct(t.due_date)   : tS;
       const tW = Math.max(0.5, parseFloat(tE) - parseFloat(tS));
       const bColor = STATUS_META[t.status]?.color || '#2563eb';
       rightRows.push(`<div class="gantt-row-right"><div class="gantt-bar" style="left:${tS}%;width:${tW}%;background:${bColor};opacity:.85" data-id="${t.id}" title="${esc(t.title)}">${esc(t.title)}</div></div>`);
@@ -83,6 +83,6 @@ export function renderGantt() {
   const sh = $id('ganttScrollHeader'), sb2 = $id('ganttScrollBody');
   sb2?.addEventListener('scroll', () => { if (sh) sh.scrollLeft = sb2.scrollLeft; });
   container.querySelectorAll('[data-id]').forEach(el =>
-    el.addEventListener('click', () => openTaskDetail(el.dataset.id))
+    el.addEventListener('click', () => window.openTaskDetail?.(el.dataset.id))
   );
 }

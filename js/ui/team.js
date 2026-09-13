@@ -7,6 +7,9 @@ import { state, updateEntity } from '../state.js';
 import { $id, esc, setVal, openOverlay, closeOverlay, toast, AVATAR_PRESETS } from '../utils.js';
 import { updateMember } from '../storage.js';
 
+let memberFormPreset = null;
+let memberFormSkills = [];
+
 export function renderTeam() {
   const container = $id('teamContainer'); if (!container) return;
   if (!state.members.length) {
@@ -49,20 +52,39 @@ export function renderTeam() {
 }
 
 export function openMemberForm(memberId) {
-  const m = state.members.find(x => x.id === memberId); if (!m) return;
-  setVal('mId', m.id);
-  setVal('mName', m.display_name || '');
-  setVal('mColor', m.color || '#2563eb');
+  const m = state.members.find(x => x.id === memberId);
+  if (!m) return;
+  memberFormPreset = m.avatar_preset ?? null;
+  memberFormSkills = [...(m.skills || [])];
+  setVal('mbrId',        m.id);
+  setVal('mbrName',      m.display_name || '');
+  setVal('mbrAvatarUrl', m.avatar_url   || '');
+  renderAvatarPresetGrid();
+  renderMemberSkillChips();
+  const skillInp = $id('mbrSkillInput');
+  if (skillInp) {
+    const fresh = skillInp.cloneNode(true);
+    skillInp.replaceWith(fresh);
+    fresh.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      const v = fresh.value.trim();
+      if (v && !memberFormSkills.includes(v)) { memberFormSkills.push(v); renderMemberSkillChips(); }
+      fresh.value = '';
+    });
+  }
   openOverlay('memberFormOverlay');
 }
 
 export async function saveMember() {
-  const memberId = $id('mId')?.value;
-  const m = state.members.find(x => x.id === memberId); if (!m) return;
+  const memberId = $id('mbrId')?.value;
+  const m = state.members.find(x => x.id === memberId);
+  if (!m) return;
   const updates = {
-    display_name:  $id('mName')?.value.trim() || null,
-    color:         $id('mColor')?.value || null,
-    avatar_preset: window._selectedAvatarPreset ?? m.avatar_preset,
+    display_name:  $id('mbrName')?.value.trim() || null,
+    avatar_url:    $id('mbrAvatarUrl')?.value.trim() || null,
+    avatar_preset: memberFormPreset,
+    skills:        [...memberFormSkills],
   };
   try {
     await updateMember(memberId, updates);
