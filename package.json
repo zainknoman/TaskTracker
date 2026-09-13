@@ -1,0 +1,28 @@
+{
+  "name": "tasktracker",
+  "version": "1.0.0",
+  "description": "> **Enterprise Work Management System** — A fully client-side, zero-dependency project and task management platform built with vanilla JavaScript, HTML, and CSS.",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "seed": "node scripts/seed.js"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zainknoman/TaskTracker.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/zainknoman/TaskTracker/issues"
+  },
+  "homepage": "https://github.com/zainknoman/TaskTracker#readme"
+}
