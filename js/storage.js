@@ -5,7 +5,7 @@ import { state } from './state.js';
 // Load all workspace data in parallel
 export async function loadWorkspaceData(workspaceId) {
   const [proj, tasks, ms, sp, members] = await Promise.all([
-    sb.from('projects').select('*').eq('workspace_id', workspaceId).order('created_at'),
+    sb.from('tt_projects').select('*').eq('workspace_id', workspaceId).order('created_at'),
     sb.from('tasks').select('*').eq('workspace_id', workspaceId).order('created_at'),
     sb.from('milestones').select('*').eq('workspace_id', workspaceId).order('sort_order'),
     sb.from('sprints').select('*').eq('workspace_id', workspaceId).order('created_at'),
@@ -43,11 +43,11 @@ export async function saveProject(project) {
     updated_at:   new Date().toISOString(),
   };
   if (project.id) {
-    const { error } = await sb.from('projects').update(payload).eq('id', project.id);
+    const { error } = await sb.from('tt_projects').update(payload).eq('id', project.id);
     if (error) throw error;
     return project;
   } else {
-    const { data, error } = await sb.from('projects')
+    const { data, error } = await sb.from('tt_projects')
       .insert({ ...payload, created_by: state.currentUser.id })
       .select().single();
     if (error) throw error;
@@ -56,7 +56,7 @@ export async function saveProject(project) {
 }
 
 export async function deleteProject(id) {
-  const { error } = await sb.from('projects').delete().eq('id', id);
+  const { error } = await sb.from('tt_projects').delete().eq('id', id);
   if (error) throw error;
 }
 
