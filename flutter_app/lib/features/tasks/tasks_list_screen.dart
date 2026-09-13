@@ -111,6 +111,7 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
       ),
       floatingActionButton: permissions.canEdit
           ? FloatingActionButton(
+              heroTag: 'tasksListFab',
               onPressed: () => TaskFormSheet.show(context),
               child: const Icon(Icons.add),
             )

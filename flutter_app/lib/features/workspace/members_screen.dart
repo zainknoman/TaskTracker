@@ -51,6 +51,7 @@ class MembersScreen extends ConsumerWidget {
                         onPressed: () async {
                           try {
                             await ref.read(memberRepositoryProvider).remove(member.id);
+                            ref.invalidate(membersProvider(workspaceId));
                           } on AppException catch (e) {
                             if (context.mounted) AppToast.error(context, e.message);
                           }

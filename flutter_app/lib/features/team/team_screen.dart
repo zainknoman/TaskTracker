@@ -50,6 +50,7 @@ class TeamScreen extends ConsumerWidget {
                 .where((s) => s.isNotEmpty)
                 .toList(),
           ));
+      ref.invalidate(membersProvider(member.workspaceId));
     } on AppException catch (e) {
       if (context.mounted) AppToast.error(context, e.message);
     }

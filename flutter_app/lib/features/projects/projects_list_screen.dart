@@ -78,6 +78,7 @@ class ProjectsListScreen extends ConsumerWidget {
       ),
       floatingActionButton: permissions.canEdit
           ? FloatingActionButton(
+              heroTag: 'projectsListFab',
               onPressed: () => ProjectFormSheet.show(context),
               child: const Icon(Icons.add),
             )

@@ -16,8 +16,8 @@ import 'task_form_sheet.dart';
 
 final _taskCommentRepositoryProvider = Provider<TaskCommentRepository>((ref) => TaskCommentRepository());
 
-final _commentsForTaskProvider = StreamProvider.family<List<TaskComment>, String>((ref, taskId) {
-  return ref.watch(_taskCommentRepositoryProvider).streamForTask(taskId);
+final _commentsForTaskProvider = FutureProvider.family<List<TaskComment>, String>((ref, taskId) {
+  return ref.watch(_taskCommentRepositoryProvider).listForTask(taskId);
 });
 
 class TaskDetailScreen extends ConsumerWidget {
@@ -101,6 +101,7 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
             createdAt: now,
           ));
       _commentController.clear();
+      ref.invalidate(_commentsForTaskProvider(widget.task.id));
     } on AppException catch (e) {
       if (mounted) AppToast.error(context, e.message);
     }

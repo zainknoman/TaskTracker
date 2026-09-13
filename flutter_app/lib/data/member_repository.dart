@@ -38,12 +38,4 @@ class MemberRepository {
       throw mapPostgrestError(e);
     }
   }
-
-  Stream<List<WorkspaceMember>> streamForWorkspace(String workspaceId) {
-    return _client
-        .from('workspace_members')
-        .stream(primaryKey: ['id'])
-        .eq('workspace_id', workspaceId)
-        .map((rows) => rows.map((r) => WorkspaceMember.fromJson(r)).toList());
-  }
 }
