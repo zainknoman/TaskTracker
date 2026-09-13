@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/login_screen.dart';
+import '../features/auth/signup_screen.dart';
 import 'supabase_config.dart';
 
 class _AuthRefreshListenable extends ChangeNotifier {
@@ -23,11 +25,11 @@ final GoRouter appRouter = GoRouter(
   routes: [
     GoRoute(
       path: '/login',
-      builder: (context, state) => const Scaffold(body: Center(child: Text('Login'))),
+      builder: (context, state) => const LoginScreen(),
     ),
     GoRoute(
       path: '/signup',
-      builder: (context, state) => const Scaffold(body: Center(child: Text('Sign up'))),
+      builder: (context, state) => const SignupScreen(),
     ),
     GoRoute(
       path: '/',
