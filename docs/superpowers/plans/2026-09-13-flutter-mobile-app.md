@@ -750,8 +750,8 @@ git commit -m "Sprint 11: add monthly calendar view"
 **Interfaces:**
 - Consumes: `tasksProvider` (Sprint 9), `projectsProvider` (Sprint 8).
 
-- [ ] **Step 1:** Add `syncfusion_flutter_gantt: ^27.2.5` to `pubspec.yaml`; run `flutter pub get`.
-- [ ] **Step 2:** Implement `lib/features/gantt/gantt_screen.dart` using `SfGantt` (from the package): one row per task within the selected project (project picker in the `AppBar`, default to the first project), `startDate`/`dueDate` mapped to the Gantt's start/end columns, `progress` mapped directly, grouped by `milestoneId` where present. Wrap in a horizontally-and-vertically scrollable container per the package's default behavior.
+- [ ] **Step 1:** No new dependency — Syncfusion does not publish a Flutter Gantt package (`syncfusion_flutter_gantt` does not exist on pub.dev; verified during implementation), so the Gantt view is a custom widget instead of a third-party one.
+- [ ] **Step 2:** Implement `lib/features/gantt/gantt_screen.dart` as a custom horizontally-and-vertically scrollable timeline: a project picker in the `AppBar` (default: first project), a header row of date columns (one per day across the project's date span, `intl.DateFormat('MMM d')`), and one row per task rendered as a `Positioned` bar inside a fixed-width day-column `Stack`, spanning from `startDate` (or `createdAt` if null) to `dueDate`, colored by `priority`, with a `LinearProgressIndicator`-style fill for `progress`. Wrap the whole grid in a `SingleChildScrollView(scrollDirection: Axis.horizontal)` nested in a vertical `SingleChildScrollView`. Group rows by `milestoneId` with a section header where present.
 - [ ] **Step 3:** Run `flutter analyze` — Expected: no errors.
 - [ ] **Step 4: Commit**
 ```bash
