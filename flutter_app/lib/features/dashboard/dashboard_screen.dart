@@ -27,7 +27,7 @@ class DashboardScreen extends ConsumerWidget {
       body: tasksAsync.when(
         data: (tasks) {
           final total = tasks.length;
-          final inProgress = tasks.where((t) => t.status == 'in_progress').length;
+          final inProgress = tasks.where((t) => t.status == 'inprogress').length;
           final completed = tasks.where((t) => t.status == 'completed').length;
           final now = DateTime.now();
           final overdue = tasks

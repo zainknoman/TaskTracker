@@ -10,7 +10,7 @@ import '../../widgets/empty_state.dart';
 
 const _statusColors = {
   'pending': Colors.orange,
-  'in_progress': Colors.blue,
+  'inprogress': Colors.blue,
   'completed': Colors.green,
   'blocked': Colors.red,
 };

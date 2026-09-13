@@ -20,7 +20,7 @@ class TaskComment {
         taskId: json['task_id'] as String,
         workspaceId: json['workspace_id'] as String,
         authorId: json['author_id'] as String,
-        body: json['body'] as String,
+        body: json['content'] as String,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -29,7 +29,7 @@ class TaskComment {
         'task_id': taskId,
         'workspace_id': workspaceId,
         'author_id': authorId,
-        'body': body,
+        'content': body,
         'created_at': createdAt.toIso8601String(),
       };
 }

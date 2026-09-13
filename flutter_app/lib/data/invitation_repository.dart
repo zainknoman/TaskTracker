@@ -18,7 +18,7 @@ class InvitationRepository {
             'workspace_id': workspaceId,
             'token': token,
             'role': role,
-            'created_by': _client.auth.currentUser!.id,
+            'invited_by': _client.auth.currentUser!.id,
             'expires_at': DateTime.now().add(const Duration(days: 7)).toIso8601String(),
           })
           .select()
@@ -31,9 +31,9 @@ class InvitationRepository {
 
   /// Calls the `accept_invitation` RPC (SECURITY DEFINER) documented in
   /// migrations/004_accept_invitation_rpc.sql.
-  Future<void> accept(String token) async {
+  Future<void> accept(String token, String userId) async {
     try {
-      await _client.rpc('accept_invitation', params: {'invite_token': token});
+      await _client.rpc('accept_invitation', params: {'p_token': token, 'p_user_id': userId});
     } on PostgrestException catch (e) {
       throw mapPostgrestError(e);
     }

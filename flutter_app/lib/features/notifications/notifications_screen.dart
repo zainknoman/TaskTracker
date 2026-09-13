@@ -32,8 +32,8 @@ class NotificationsScreen extends ConsumerWidget {
               return ListTile(
                 tileColor: n.read ? null : Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
                 leading: Icon(n.read ? Icons.notifications_none : Icons.notifications_active),
-                title: Text(n.message),
-                subtitle: Text(n.createdAt.toLocal().toString()),
+                title: Text(n.title),
+                subtitle: Text(n.body ?? n.createdAt.toLocal().toString()),
                 onTap: () async {
                   if (!n.read) {
                     await ref.read(notificationRepositoryProvider).markRead(n.id);

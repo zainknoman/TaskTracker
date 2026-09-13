@@ -13,7 +13,7 @@ void main() {
       'title': 'Write plan',
       'description': 'desc',
       'priority': 'high',
-      'status': 'in_progress',
+      'status': 'inprogress',
       'start_date': null,
       'due_date': '2026-09-20',
       'ba': null,

@@ -164,7 +164,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
                   decoration: const InputDecoration(labelText: 'Status'),
                   items: const [
                     DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                    DropdownMenuItem(value: 'in_progress', child: Text('In progress')),
+                    DropdownMenuItem(value: 'inprogress', child: Text('In progress')),
                     DropdownMenuItem(value: 'completed', child: Text('Completed')),
                     DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
                   ],

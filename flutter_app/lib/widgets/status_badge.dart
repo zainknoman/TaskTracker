@@ -8,7 +8,7 @@ class StatusBadge extends StatelessWidget {
     switch (status) {
       case 'completed':
         return Colors.green;
-      case 'in_progress':
+      case 'inprogress':
         return Colors.blue;
       case 'blocked':
         return Colors.red;
@@ -25,7 +25,7 @@ class StatusBadge extends StatelessWidget {
     }
   }
 
-  String _label() => status.replaceAll('_', ' ');
+  String _label() => status == 'inprogress' ? 'In Progress' : status.replaceAll('_', ' ');
 
   @override
   Widget build(BuildContext context) {

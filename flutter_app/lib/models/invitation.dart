@@ -3,9 +3,11 @@ class Invitation {
   final String workspaceId;
   final String token;
   final String role;
-  final String createdBy;
+  final String? label;
+  final String status; // pending | accepted | cancelled
+  final String invitedBy;
+  final String? acceptedBy;
   final DateTime expiresAt;
-  final DateTime? usedAt;
   final DateTime createdAt;
 
   const Invitation({
@@ -13,9 +15,11 @@ class Invitation {
     required this.workspaceId,
     required this.token,
     required this.role,
-    required this.createdBy,
+    this.label,
+    required this.status,
+    required this.invitedBy,
+    this.acceptedBy,
     required this.expiresAt,
-    this.usedAt,
     required this.createdAt,
   });
 
@@ -24,9 +28,11 @@ class Invitation {
         workspaceId: json['workspace_id'] as String,
         token: json['token'] as String,
         role: json['role'] as String,
-        createdBy: json['created_by'] as String,
+        label: json['label'] as String?,
+        status: json['status'] as String,
+        invitedBy: json['invited_by'] as String,
+        acceptedBy: json['accepted_by'] as String?,
         expiresAt: DateTime.parse(json['expires_at'] as String),
-        usedAt: json['used_at'] != null ? DateTime.parse(json['used_at'] as String) : null,
         createdAt: DateTime.parse(json['created_at'] as String),
       );
 
@@ -35,9 +41,11 @@ class Invitation {
         'workspace_id': workspaceId,
         'token': token,
         'role': role,
-        'created_by': createdBy,
+        'label': label,
+        'status': status,
+        'invited_by': invitedBy,
+        'accepted_by': acceptedBy,
         'expires_at': expiresAt.toIso8601String(),
-        'used_at': usedAt?.toIso8601String(),
         'created_at': createdAt.toIso8601String(),
       };
 }

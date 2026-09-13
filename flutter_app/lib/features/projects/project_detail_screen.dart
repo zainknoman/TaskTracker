@@ -111,7 +111,7 @@ class _OverviewTab extends StatelessWidget {
         if (project.client != null) _InfoRow(label: 'Client', value: project.client!),
         if (project.department != null) _InfoRow(label: 'Department', value: project.department!),
         if (project.pm != null) _InfoRow(label: 'PM', value: project.pm!),
-        if (project.baTeam != null) _InfoRow(label: 'BA Team', value: project.baTeam!),
+        if (project.baTeam.isNotEmpty) _InfoRow(label: 'BA Team', value: project.baTeam.join(', ')),
         if (project.budget != null) _InfoRow(label: 'Budget', value: project.budget.toString()),
       ],
     );
@@ -185,7 +185,7 @@ class _MilestonesTab extends ConsumerWidget {
             final m = milestones[index];
             return ListTile(
               leading: const Icon(Icons.flag_outlined),
-              title: Text(m.title),
+              title: Text(m.name),
               subtitle: m.dueDate != null ? Text('Due ${m.dueDate!.toLocal()}'.split(' ').first) : null,
               trailing: StatusBadge(status: m.status),
             );

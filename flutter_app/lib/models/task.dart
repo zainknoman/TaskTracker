@@ -8,7 +8,7 @@ class Task {
   final String title;
   final String? description;
   final String priority; // low | medium | high | critical
-  final String status; // pending | in_progress | completed | blocked
+  final String status; // pending | inprogress | completed | blocked
   final DateTime? startDate;
   final DateTime? dueDate;
   final String? ba;

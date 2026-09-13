@@ -12,7 +12,7 @@ void main() {
       'department': 'Engineering',
       'client': 'Acme Corp',
       'pm': 'Alice',
-      'ba_team': 'BA Team 1',
+      'ba_team': ['BA Team 1'],
       'status': 'active',
       'priority': 'high',
       'start_date': '2026-01-01',
@@ -28,6 +28,7 @@ void main() {
     expect(project.name, 'Acme Website');
     expect(project.status, 'active');
     expect(project.tags, ['web']);
+    expect(project.baTeam, ['BA Team 1']);
     expect(project.toJson()['name'], 'Acme Website');
   });
 

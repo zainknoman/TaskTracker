@@ -5,7 +5,7 @@ class WorkspaceMember {
   final String role; // owner | member | guest
   final String? displayName;
   final String? avatarUrl;
-  final String? avatarPreset;
+  final int? avatarPreset;
   final String? color;
   final List<String> skills;
   final DateTime joinedAt;
@@ -30,7 +30,7 @@ class WorkspaceMember {
         role: json['role'] as String,
         displayName: json['display_name'] as String?,
         avatarUrl: json['avatar_url'] as String?,
-        avatarPreset: json['avatar_preset'] as String?,
+        avatarPreset: json['avatar_preset'] as int?,
         color: json['color'] as String?,
         skills: List<String>.from(json['skills'] as List? ?? const []),
         joinedAt: DateTime.parse(json['joined_at'] as String),
@@ -52,7 +52,7 @@ class WorkspaceMember {
   WorkspaceMember copyWith({
     String? displayName,
     String? avatarUrl,
-    String? avatarPreset,
+    int? avatarPreset,
     String? color,
     List<String>? skills,
   }) =>

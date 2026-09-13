@@ -12,7 +12,7 @@ import '../../widgets/priority_badge.dart';
 
 const _kanbanColumns = [
   ('pending', 'Pending'),
-  ('in_progress', 'In Progress'),
+  ('inprogress', 'In Progress'),
   ('completed', 'Completed'),
   ('blocked', 'Blocked'),
 ];

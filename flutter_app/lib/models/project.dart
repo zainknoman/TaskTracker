@@ -7,7 +7,7 @@ class Project {
   final String? department;
   final String? client;
   final String? pm;
-  final String? baTeam;
+  final List<String> baTeam;
   final String status; // active | planning | onhold | completed | archived
   final String priority; // low | medium | high | critical
   final DateTime? startDate;
@@ -28,7 +28,7 @@ class Project {
     this.department,
     this.client,
     this.pm,
-    this.baTeam,
+    this.baTeam = const [],
     required this.status,
     required this.priority,
     this.startDate,
@@ -50,7 +50,7 @@ class Project {
         department: json['department'] as String?,
         client: json['client'] as String?,
         pm: json['pm'] as String?,
-        baTeam: json['ba_team'] as String?,
+        baTeam: List<String>.from(json['ba_team'] as List? ?? const []),
         status: json['status'] as String,
         priority: json['priority'] as String,
         startDate: json['start_date'] != null ? DateTime.parse(json['start_date'] as String) : null,
@@ -92,7 +92,7 @@ class Project {
     String? department,
     String? client,
     String? pm,
-    String? baTeam,
+    List<String>? baTeam,
     String? status,
     String? priority,
     DateTime? startDate,

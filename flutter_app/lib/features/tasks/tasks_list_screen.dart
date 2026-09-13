@@ -62,11 +62,11 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                for (final status in const ['pending', 'in_progress', 'completed', 'blocked'])
+                for (final status in const ['pending', 'inprogress', 'completed', 'blocked'])
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: FilterChip(
-                      label: Text(status.replaceAll('_', ' ')),
+                      label: Text(status == 'inprogress' ? 'In Progress' : status.replaceAll('_', ' ')),
                       selected: _statusFilter == status,
                       onSelected: (selected) => setState(() => _statusFilter = selected ? status : null),
                     ),
