@@ -73,12 +73,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(DateFormat.yMMMM().format(_visibleMonth)),
-        leading: IconButton(
-          icon: const Icon(Icons.chevron_left),
-          onPressed: () => setState(
-              () => _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month - 1)),
-        ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.chevron_left),
+            onPressed: () => setState(
+                () => _visibleMonth = DateTime(_visibleMonth.year, _visibleMonth.month - 1)),
+          ),
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: () => setState(
