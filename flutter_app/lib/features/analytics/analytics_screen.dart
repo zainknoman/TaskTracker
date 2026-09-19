@@ -1,25 +1,33 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/tokens.dart';
+import '../../core/ui_helpers.dart';
+import '../../models/project.dart';
 import '../../models/task.dart';
+import '../../models/workspace_member.dart';
 import '../../providers/member_providers.dart';
+import '../../providers/project_providers.dart';
 import '../../providers/task_providers.dart';
 import '../../providers/workspace_providers.dart';
+import '../../widgets/app_avatar.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/page_layout.dart';
+import '../../widgets/view_header.dart';
 
 const _statusColors = {
-  'pending': Colors.orange,
-  'inprogress': Colors.blue,
-  'completed': Colors.green,
-  'blocked': Colors.red,
+  'pending': Color(0xFFFBBF24),
+  'inprogress': Color(0xFF60A5FA),
+  'completed': Color(0xFF34D399),
+  'blocked': Color(0xFFF87171),
 };
 
 const _priorityColors = {
-  'low': Colors.blueGrey,
-  'medium': Colors.amber,
-  'high': Colors.deepOrange,
-  'critical': Colors.red,
+  'low': Color(0xFF34D399),
+  'medium': Color(0xFF60A5FA),
+  'high': Color(0xFFFCD34D),
+  'critical': Color(0xFFF87171),
 };
 
 class AnalyticsScreen extends ConsumerWidget {
@@ -29,150 +37,315 @@ class AnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final workspaceId = ref.watch(activeWorkspaceIdProvider);
     if (workspaceId == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.bar_chart, message: 'No workspace selected'));
+      return const SubPage(
+        crumbs: ['Analytics'],
+        body: EmptyState(
+          icon: Icons.bar_chart,
+          message: 'No workspace selected',
+        ),
+      );
     }
 
     final tasksAsync = ref.watch(tasksProvider(workspaceId));
-    final membersAsync = ref.watch(membersProvider(workspaceId));
+    final projects =
+        ref.watch(projectsProvider(workspaceId)).value ?? const <Project>[];
+    final members =
+        ref.watch(membersProvider(workspaceId)).value ??
+        const <WorkspaceMember>[];
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Analytics')),
+    return SubPage(
+      crumbs: const ['Analytics'],
       body: tasksAsync.when(
-        data: (tasks) {
-          if (tasks.isEmpty) {
-            return const EmptyState(icon: Icons.bar_chart, message: 'No tasks to analyze yet');
-          }
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text('Status distribution', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              SizedBox(height: 180, child: _StatusPieChart(tasks: tasks)),
-              const SizedBox(height: 24),
-              Text('Priority distribution', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              SizedBox(height: 180, child: _PriorityPieChart(tasks: tasks)),
-              const SizedBox(height: 24),
-              Text('Workload by member', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              membersAsync.when(
-                data: (members) => SizedBox(
-                  height: 220,
-                  child: _WorkloadBarChart(
-                    tasks: tasks,
-                    memberNames: {for (final m in members) m.userId: m.displayName ?? 'Unnamed'},
-                  ),
-                ),
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Text('Error: $e'),
+        data: (tasks) =>
+            _AnalyticsBody(tasks: tasks, projects: projects, members: members),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(e),
+      ),
+    );
+  }
+}
+
+class _AnalyticsBody extends StatelessWidget {
+  final List<Task> tasks;
+  final List<Project> projects;
+  final List<WorkspaceMember> members;
+  const _AnalyticsBody({
+    required this.tasks,
+    required this.projects,
+    required this.members,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final total = tasks.length;
+    int byStatus(String s) => tasks.where((t) => t.status == s).length;
+
+    final workload = <WorkspaceMember, int>{};
+    for (final m in members) {
+      final n = tasks.where((t) => t.assigneeId == m.userId).length;
+      if (n > 0) workload[m] = n;
+    }
+    final workloadEntries = workload.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    final kpis = [
+      (
+        'Completion Rate',
+        total == 0 ? '—' : '${(byStatus('completed') / total * 100).round()}%',
+        Brand.success,
+      ),
+      (
+        'Blocked Rate',
+        total == 0 ? '—' : '${(byStatus('blocked') / total * 100).round()}%',
+        Brand.danger,
+      ),
+      ('Overdue Tasks', '${tasks.where(isOverdue).length}', Brand.warning),
+      (
+        'Critical Tasks',
+        '${tasks.where((t) => t.priority == 'critical').length}',
+        Brand.info,
+      ),
+      (
+        'Total Projects',
+        '${projects.where((p) => p.status == 'active').length} active',
+        Brand.primary,
+      ),
+      (
+        'Total Hours Est',
+        '${tasks.fold<num>(0, (a, t) => a + (t.estimatedHours ?? 0))}h',
+        const Color(0xFF0891B2),
+      ),
+    ];
+
+    final wide = MediaQuery.sizeOf(context).width >= 760;
+    final cards = [
+      _AnalyticsCard(
+        title: 'Tasks by Status',
+        child: Column(
+          children: [
+            for (final s in taskStatusOptions)
+              _HBar(
+                label: s.$2,
+                value:
+                    '${byStatus(s.$1)} (${total == 0 ? 0 : (byStatus(s.$1) / total * 100).round()}%)',
+                fraction: total == 0 ? 0 : byStatus(s.$1) / total,
+                color: _statusColors[s.$1]!,
               ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+          ],
+        ),
       ),
+      _AnalyticsCard(
+        title: 'Tasks by Priority',
+        child: Column(
+          children: [
+            for (final p in priorityOptions)
+              Builder(
+                builder: (_) {
+                  final n = tasks.where((t) => t.priority == p.$1).length;
+                  return _HBar(
+                    label: p.$2,
+                    value: '$n',
+                    fraction: total == 0 ? 0 : n / total,
+                    color: _priorityColors[p.$1]!,
+                  );
+                },
+              ),
+          ],
+        ),
+      ),
+      _AnalyticsCard(
+        title: 'Project Progress',
+        child: projects.where((p) => p.status != 'archived').isEmpty
+            ? const NoData('No projects')
+            : Column(
+                children: [
+                  for (final p in projects.where((p) => p.status != 'archived'))
+                    Builder(
+                      builder: (_) {
+                        final pt = tasks
+                            .where((t) => t.projectId == p.id)
+                            .toList();
+                        final done = pt
+                            .where((t) => t.status == 'completed')
+                            .length;
+                        final pct = pt.isEmpty
+                            ? 0
+                            : (done / pt.length * 100).round();
+                        return _HBar(
+                          label: p.name,
+                          value: '$pct% · ${pt.length} tasks',
+                          fraction: pct / 100,
+                          color: parseHex(p.color),
+                        );
+                      },
+                    ),
+                ],
+              ),
+      ),
+      _AnalyticsCard(
+        title: 'Team Workload',
+        child: workloadEntries.isEmpty
+            ? const NoData('No assignments')
+            : Column(
+                children: [
+                  for (final e in workloadEntries.take(8))
+                    _HBar(
+                      label: e.key.displayName ?? 'Unnamed',
+                      leading: AppAvatar(
+                        color: parseHex(e.key.color),
+                        text: initials(e.key.displayName),
+                        size: 20,
+                        fontSize: rem(0.6),
+                      ),
+                      value: '${e.value}',
+                      fraction: e.value / workloadEntries.first.value,
+                      color: parseHex(e.key.color),
+                    ),
+                ],
+              ),
+      ),
+      _AnalyticsCard(
+        title: 'Summary KPIs',
+        child: GridWrap(
+          columns: 2,
+          gap: 12,
+          children: [
+            for (final k in kpis) _Kpi(label: k.$1, value: k.$2, color: k.$3),
+          ],
+        ),
+      ),
+    ];
+
+    return ListView(
+      padding: pagePadding(context),
+      children: [
+        const ViewHeader(title: 'Analytics'),
+        GridWrap(columns: wide ? 2 : 1, gap: 18, children: cards),
+      ],
     );
   }
 }
 
-class _StatusPieChart extends StatelessWidget {
-  final List<Task> tasks;
-  const _StatusPieChart({required this.tasks});
+/// Web `.analytics-card`: uppercase muted title over the chart.
+class _AnalyticsCard extends StatelessWidget {
+  final String title;
+  final Widget child;
+  const _AnalyticsCard({required this.title, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    final counts = <String, int>{};
-    for (final t in tasks) {
-      counts[t.status] = (counts[t.status] ?? 0) + 1;
-    }
-    return PieChart(
-      PieChartData(
-        sections: [
-          for (final entry in counts.entries)
-            PieChartSectionData(
-              value: entry.value.toDouble(),
-              title: '${entry.value}',
-              color: _statusColors[entry.key] ?? Colors.grey,
-              radius: 60,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PriorityPieChart extends StatelessWidget {
-  final List<Task> tasks;
-  const _PriorityPieChart({required this.tasks});
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = <String, int>{};
-    for (final t in tasks) {
-      counts[t.priority] = (counts[t.priority] ?? 0) + 1;
-    }
-    return PieChart(
-      PieChartData(
-        sections: [
-          for (final entry in counts.entries)
-            PieChartSectionData(
-              value: entry.value.toDouble(),
-              title: '${entry.value}',
-              color: _priorityColors[entry.key] ?? Colors.grey,
-              radius: 60,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WorkloadBarChart extends StatelessWidget {
-  final List<Task> tasks;
-  final Map<String, String> memberNames;
-  const _WorkloadBarChart({required this.tasks, required this.memberNames});
-
-  @override
-  Widget build(BuildContext context) {
-    final counts = <String, int>{};
-    for (final t in tasks) {
-      if (t.assigneeId == null) continue;
-      counts[t.assigneeId!] = (counts[t.assigneeId!] ?? 0) + 1;
-    }
-    final entries = counts.entries.toList();
-    if (entries.isEmpty) {
-      return const EmptyState(icon: Icons.bar_chart, message: 'No tasks assigned yet');
-    }
-
-    return BarChart(
-      BarChartData(
-        alignment: BarChartAlignment.spaceAround,
-        barGroups: [
-          for (var i = 0; i < entries.length; i++)
-            BarChartGroupData(x: i, barRods: [
-              BarChartRodData(toY: entries[i].value.toDouble(), color: Theme.of(context).colorScheme.primary),
-            ]),
-        ],
-        titlesData: FlTitlesData(
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final index = value.toInt();
-                if (index < 0 || index >= entries.length) return const SizedBox.shrink();
-                final name = memberNames[entries[index].key] ?? 'Unknown';
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(name, style: const TextStyle(fontSize: 10)),
-                );
-              },
+    final c = context.c;
+    return AppCard(
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            title.toUpperCase(),
+            style: TextStyle(
+              fontSize: rem(0.88),
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.04 * rem(0.88),
+              color: c.text2,
             ),
           ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 28)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+/// Web `.hbar-item`: label + value row over an 8px track.
+class _HBar extends StatelessWidget {
+  final String label;
+  final String value;
+  final double fraction;
+  final Color color;
+  final Widget? leading;
+  const _HBar({
+    required this.label,
+    required this.value,
+    required this.fraction,
+    required this.color,
+    this.leading,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 6)],
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: rem(0.78),
+                    fontWeight: FontWeight.w500,
+                    color: c.text2,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                value,
+                style: TextStyle(fontSize: rem(0.72), color: c.text3),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          AppProgress(value: fraction, height: 8, color: color),
+        ],
+      ),
+    );
+  }
+}
+
+class _Kpi extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color color;
+  const _Kpi({required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: c.surface2,
+        borderRadius: Radii.mdAll,
+        border: Border.all(color: c.border),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: rem(1.4),
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            label.toUpperCase(),
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: rem(0.68),
+              letterSpacing: 0.04 * rem(0.68),
+              color: c.text3,
+            ),
+          ),
+        ],
       ),
     );
   }

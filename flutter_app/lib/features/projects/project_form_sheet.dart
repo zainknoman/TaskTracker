@@ -5,6 +5,7 @@ import '../../data/exceptions.dart';
 import '../../models/project.dart';
 import '../../providers/project_providers.dart';
 import '../../providers/workspace_providers.dart';
+import '../../widgets/app_form.dart';
 import '../../widgets/app_toast.dart';
 
 class ProjectFormSheet extends ConsumerStatefulWidget {
@@ -39,7 +40,9 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     final existing = widget.existing;
     _nameController = TextEditingController(text: existing?.name ?? '');
     _codeController = TextEditingController(text: existing?.code ?? '');
-    _descriptionController = TextEditingController(text: existing?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: existing?.description ?? '',
+    );
     _clientController = TextEditingController(text: existing?.client ?? '');
     _status = existing?.status ?? 'planning';
     _priority = existing?.priority ?? 'medium';
@@ -63,29 +66,33 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
     try {
       final repository = ref.read(projectRepositoryProvider);
       if (widget.existing != null) {
-        await repository.update(widget.existing!.copyWith(
-          name: _nameController.text.trim(),
-          code: _codeController.text.trim(),
-          description: _descriptionController.text.trim(),
-          client: _clientController.text.trim(),
-          status: _status,
-          priority: _priority,
-        ));
+        await repository.update(
+          widget.existing!.copyWith(
+            name: _nameController.text.trim(),
+            code: _codeController.text.trim(),
+            description: _descriptionController.text.trim(),
+            client: _clientController.text.trim(),
+            status: _status,
+            priority: _priority,
+          ),
+        );
       } else {
         final now = DateTime.now();
-        await repository.create(Project(
-          id: '',
-          workspaceId: workspaceId,
-          name: _nameController.text.trim(),
-          code: _codeController.text.trim(),
-          description: _descriptionController.text.trim(),
-          status: _status,
-          priority: _priority,
-          tags: const [],
-          createdBy: '',
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await repository.create(
+          Project(
+            id: '',
+            workspaceId: workspaceId,
+            name: _nameController.text.trim(),
+            code: _codeController.text.trim(),
+            description: _descriptionController.text.trim(),
+            status: _status,
+            priority: _priority,
+            tags: const [],
+            createdBy: '',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
       }
       if (mounted) Navigator.pop(context);
     } on AppException catch (e) {
@@ -97,80 +104,67 @@ class _ProjectFormSheetState extends ConsumerState<ProjectFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(widget.existing == null ? 'New project' : 'Edit project',
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Name is required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _codeController,
-                  decoration: const InputDecoration(labelText: 'Code'),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _clientController,
-                  decoration: const InputDecoration(labelText: 'Client'),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: const [
-                    DropdownMenuItem(value: 'planning', child: Text('Planning')),
-                    DropdownMenuItem(value: 'active', child: Text('Active')),
-                    DropdownMenuItem(value: 'onhold', child: Text('On hold')),
-                    DropdownMenuItem(value: 'completed', child: Text('Completed')),
-                    DropdownMenuItem(value: 'archived', child: Text('Archived')),
-                  ],
-                  onChanged: (v) => setState(() => _status = v ?? _status),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _priority,
-                  decoration: const InputDecoration(labelText: 'Priority'),
-                  items: const [
-                    DropdownMenuItem(value: 'low', child: Text('Low')),
-                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(value: 'critical', child: Text('Critical')),
-                  ],
-                  onChanged: (v) => setState(() => _priority = v ?? _priority),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(widget.existing == null ? 'Create project' : 'Save changes'),
-                ),
-              ],
+    final editing = widget.existing != null;
+    return SheetScaffold(
+      title: editing ? 'Edit Project' : 'New Project',
+      footer: sheetActions(
+        context,
+        submitLabel: editing ? 'Save Changes' : 'Create Project',
+        onSubmit: _submitting ? null : _submit,
+        loading: _submitting,
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppTextField(
+              label: 'Project Name',
+              required: true,
+              controller: _nameController,
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Name is required' : null,
             ),
-          ),
+            const SizedBox(height: 14),
+            AppTextField(
+              label: 'Code',
+              controller: _codeController,
+              hint: 'e.g. PRJ-01',
+            ),
+            const SizedBox(height: 14),
+            AppTextField(
+              label: 'Description',
+              controller: _descriptionController,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 14),
+            AppTextField(label: 'Client', controller: _clientController),
+            const SizedBox(height: 14),
+            AppDropdown<String>(
+              label: 'Status',
+              value: _status,
+              items: const [
+                DropdownMenuItem(value: 'planning', child: Text('Planning')),
+                DropdownMenuItem(value: 'active', child: Text('Active')),
+                DropdownMenuItem(value: 'onhold', child: Text('On Hold')),
+                DropdownMenuItem(value: 'completed', child: Text('Completed')),
+                DropdownMenuItem(value: 'archived', child: Text('Archived')),
+              ],
+              onChanged: (v) => setState(() => _status = v ?? _status),
+            ),
+            const SizedBox(height: 14),
+            AppDropdown<String>(
+              label: 'Priority',
+              value: _priority,
+              items: const [
+                DropdownMenuItem(value: 'low', child: Text('Low')),
+                DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                DropdownMenuItem(value: 'high', child: Text('High')),
+                DropdownMenuItem(value: 'critical', child: Text('Critical')),
+              ],
+              onChanged: (v) => setState(() => _priority = v ?? _priority),
+            ),
+          ],
         ),
       ),
     );

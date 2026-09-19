@@ -15,7 +15,9 @@ import 'supabase_config.dart';
 
 class _AuthRefreshListenable extends ChangeNotifier {
   _AuthRefreshListenable() {
-    SupabaseConfig.client.auth.onAuthStateChange.listen((_) => notifyListeners());
+    SupabaseConfig.client.auth.onAuthStateChange.listen(
+      (_) => notifyListeners(),
+    );
   }
 }
 
@@ -24,7 +26,8 @@ final GoRouter appRouter = GoRouter(
   refreshListenable: _AuthRefreshListenable(),
   redirect: (context, state) {
     final loggedIn = SupabaseConfig.client.auth.currentUser != null;
-    final loggingInRoute = state.matchedLocation == '/login' || state.matchedLocation == '/signup';
+    final loggingInRoute =
+        state.matchedLocation == '/login' || state.matchedLocation == '/signup';
 
     if (!loggedIn && !loggingInRoute) return '/login';
     if (loggedIn && loggingInRoute) return '/dashboard';
@@ -32,51 +35,67 @@ final GoRouter appRouter = GoRouter(
     return null;
   },
   routes: [
-    GoRoute(
-      path: '/login',
-      builder: (context, state) => const LoginScreen(),
-    ),
-    GoRoute(
-      path: '/signup',
-      builder: (context, state) => const SignupScreen(),
-    ),
+    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(path: '/signup', builder: (context, state) => const SignupScreen()),
     StatefulShellRoute.indexedStack(
-      builder: (context, state, navigationShell) => AppShell(navigationShell: navigationShell),
+      builder: (context, state, navigationShell) =>
+          AppShell(navigationShell: navigationShell, location: state.uri.path),
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(path: '/dashboard', builder: (context, state) => const DashboardScreen()),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/projects',
-            builder: (context, state) => const ProjectsListScreen(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                builder: (context, state) =>
-                    ProjectDetailScreen(projectId: state.pathParameters['id']!),
-              ),
-            ],
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: '/tasks',
-            builder: (context, state) => const TasksListScreen(),
-            routes: [
-              GoRoute(
-                path: ':id',
-                builder: (context, state) => TaskDetailScreen(taskId: state.pathParameters['id']!),
-              ),
-            ],
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(path: '/kanban', builder: (context, state) => const KanbanScreen()),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(path: '/notifications', builder: (context, state) => const NotificationsScreen()),
-        ]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/dashboard',
+              builder: (context, state) => const DashboardScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/projects',
+              builder: (context, state) => const ProjectsListScreen(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) => ProjectDetailScreen(
+                    projectId: state.pathParameters['id']!,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/tasks',
+              builder: (context, state) => const TasksListScreen(),
+              routes: [
+                GoRoute(
+                  path: ':id',
+                  builder: (context, state) =>
+                      TaskDetailScreen(taskId: state.pathParameters['id']!),
+                ),
+              ],
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/kanban',
+              builder: (context, state) => const KanbanScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: '/notifications',
+              builder: (context, state) => const NotificationsScreen(),
+            ),
+          ],
+        ),
       ],
     ),
   ],

@@ -6,6 +6,7 @@ import '../../models/task.dart';
 import '../../providers/project_providers.dart';
 import '../../providers/task_providers.dart';
 import '../../providers/workspace_providers.dart';
+import '../../widgets/app_form.dart';
 import '../../widgets/app_toast.dart';
 
 class TaskFormSheet extends ConsumerStatefulWidget {
@@ -13,11 +14,16 @@ class TaskFormSheet extends ConsumerStatefulWidget {
   final String? initialProjectId;
   const TaskFormSheet({super.key, this.existing, this.initialProjectId});
 
-  static Future<void> show(BuildContext context, {Task? existing, String? initialProjectId}) {
+  static Future<void> show(
+    BuildContext context, {
+    Task? existing,
+    String? initialProjectId,
+  }) {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (_) => TaskFormSheet(existing: existing, initialProjectId: initialProjectId),
+      builder: (_) =>
+          TaskFormSheet(existing: existing, initialProjectId: initialProjectId),
     );
   }
 
@@ -39,7 +45,9 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
     super.initState();
     final existing = widget.existing;
     _titleController = TextEditingController(text: existing?.title ?? '');
-    _descriptionController = TextEditingController(text: existing?.description ?? '');
+    _descriptionController = TextEditingController(
+      text: existing?.description ?? '',
+    );
     _projectId = existing?.projectId ?? widget.initialProjectId;
     _priority = existing?.priority ?? 'medium';
     _status = existing?.status ?? 'pending';
@@ -61,33 +69,37 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
     try {
       final repository = ref.read(taskRepositoryProvider);
       if (widget.existing != null) {
-        await repository.update(widget.existing!.copyWith(
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          priority: _priority,
-          status: _status,
-        ));
+        await repository.update(
+          widget.existing!.copyWith(
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            priority: _priority,
+            status: _status,
+          ),
+        );
       } else {
         final now = DateTime.now();
-        await repository.create(Task(
-          id: '',
-          workspaceId: workspaceId,
-          projectId: _projectId!,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          priority: _priority,
-          status: _status,
-          progress: 0,
-          tags: const [],
-          documents: const [],
-          dependencies: const [],
-          subtasks: const [],
-          starred: false,
-          pinned: false,
-          createdBy: '',
-          createdAt: now,
-          updatedAt: now,
-        ));
+        await repository.create(
+          Task(
+            id: '',
+            workspaceId: workspaceId,
+            projectId: _projectId!,
+            title: _titleController.text.trim(),
+            description: _descriptionController.text.trim(),
+            priority: _priority,
+            status: _status,
+            progress: 0,
+            tags: const [],
+            documents: const [],
+            dependencies: const [],
+            subtasks: const [],
+            starred: false,
+            pinned: false,
+            createdBy: '',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
       }
       if (mounted) Navigator.pop(context);
     } on AppException catch (e) {
@@ -100,86 +112,82 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
   @override
   Widget build(BuildContext context) {
     final workspaceId = ref.watch(activeWorkspaceIdProvider);
-    final projectsAsync = workspaceId != null ? ref.watch(projectsProvider(workspaceId)) : null;
+    final projectsAsync = workspaceId != null
+        ? ref.watch(projectsProvider(workspaceId))
+        : null;
+    final editing = widget.existing != null;
 
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.only(
-          left: 16,
-          right: 16,
-          top: 16,
-          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(widget.existing == null ? 'New task' : 'Edit task',
-                    style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(labelText: 'Title'),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Title is required' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(labelText: 'Description'),
-                  maxLines: 3,
-                ),
-                const SizedBox(height: 12),
-                if (projectsAsync != null)
-                  projectsAsync.when(
-                    data: (projects) => DropdownButtonFormField<String>(
-                      initialValue: _projectId,
-                      decoration: const InputDecoration(labelText: 'Project'),
-                      items: [
-                        for (final p in projects) DropdownMenuItem(value: p.id, child: Text(p.name)),
-                      ],
-                      onChanged: (v) => setState(() => _projectId = v),
-                      validator: (v) => v == null ? 'Project is required' : null,
-                    ),
-                    loading: () => const LinearProgressIndicator(),
-                    error: (e, _) => Text('Error loading projects: $e'),
-                  ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _priority,
-                  decoration: const InputDecoration(labelText: 'Priority'),
-                  items: const [
-                    DropdownMenuItem(value: 'low', child: Text('Low')),
-                    DropdownMenuItem(value: 'medium', child: Text('Medium')),
-                    DropdownMenuItem(value: 'high', child: Text('High')),
-                    DropdownMenuItem(value: 'critical', child: Text('Critical')),
-                  ],
-                  onChanged: (v) => setState(() => _priority = v ?? _priority),
-                ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<String>(
-                  initialValue: _status,
-                  decoration: const InputDecoration(labelText: 'Status'),
-                  items: const [
-                    DropdownMenuItem(value: 'pending', child: Text('Pending')),
-                    DropdownMenuItem(value: 'inprogress', child: Text('In progress')),
-                    DropdownMenuItem(value: 'completed', child: Text('Completed')),
-                    DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
-                  ],
-                  onChanged: (v) => setState(() => _status = v ?? _status),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: _submitting ? null : _submit,
-                  child: _submitting
-                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text(widget.existing == null ? 'Create task' : 'Save changes'),
-                ),
-              ],
+    return SheetScaffold(
+      title: editing ? 'Edit Task' : 'New Task',
+      footer: sheetActions(
+        context,
+        submitLabel: editing ? 'Save Changes' : 'Create Task',
+        onSubmit: _submitting ? null : _submit,
+        loading: _submitting,
+      ),
+      body: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AppTextField(
+              label: 'Title',
+              required: true,
+              controller: _titleController,
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Title is required' : null,
             ),
-          ),
+            const SizedBox(height: 14),
+            AppTextField(
+              label: 'Description',
+              controller: _descriptionController,
+              maxLines: 3,
+            ),
+            const SizedBox(height: 14),
+            if (projectsAsync != null)
+              projectsAsync.when(
+                data: (projects) => AppDropdown<String>(
+                  label: 'Project',
+                  required: true,
+                  value: _projectId,
+                  items: [
+                    for (final p in projects)
+                      DropdownMenuItem(value: p.id, child: Text(p.name)),
+                  ],
+                  onChanged: (v) => setState(() => _projectId = v),
+                  validator: (v) => v == null ? 'Project is required' : null,
+                ),
+                loading: () => const LinearProgressIndicator(),
+                error: (e, _) => Text('Error loading projects: $e'),
+              ),
+            const SizedBox(height: 14),
+            AppDropdown<String>(
+              label: 'Priority',
+              value: _priority,
+              items: const [
+                DropdownMenuItem(value: 'low', child: Text('Low')),
+                DropdownMenuItem(value: 'medium', child: Text('Medium')),
+                DropdownMenuItem(value: 'high', child: Text('High')),
+                DropdownMenuItem(value: 'critical', child: Text('Critical')),
+              ],
+              onChanged: (v) => setState(() => _priority = v ?? _priority),
+            ),
+            const SizedBox(height: 14),
+            AppDropdown<String>(
+              label: 'Status',
+              value: _status,
+              items: const [
+                DropdownMenuItem(value: 'pending', child: Text('Pending')),
+                DropdownMenuItem(
+                  value: 'inprogress',
+                  child: Text('In Progress'),
+                ),
+                DropdownMenuItem(value: 'completed', child: Text('Completed')),
+                DropdownMenuItem(value: 'blocked', child: Text('Blocked')),
+              ],
+              onChanged: (v) => setState(() => _status = v ?? _status),
+            ),
+          ],
         ),
       ),
     );

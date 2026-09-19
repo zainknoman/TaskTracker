@@ -11,14 +11,16 @@ Future<void> main() async {
   runApp(const ProviderScope(child: TaskFlowApp()));
 }
 
-class TaskFlowApp extends StatelessWidget {
+class TaskFlowApp extends ConsumerWidget {
   const TaskFlowApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
       title: 'TaskFlow Pro',
-      theme: appTheme,
+      theme: appLightTheme,
+      darkTheme: appDarkTheme,
+      themeMode: ref.watch(themeModeProvider),
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );

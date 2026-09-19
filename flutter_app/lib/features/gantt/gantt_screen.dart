@@ -1,17 +1,61 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/tokens.dart';
+import '../../core/ui_helpers.dart';
+import '../../data/milestone_repository.dart';
+import '../../models/milestone.dart';
 import '../../models/project.dart';
 import '../../models/task.dart';
 import '../../providers/project_providers.dart';
 import '../../providers/task_providers.dart';
 import '../../providers/workspace_providers.dart';
+import '../../widgets/app_card.dart';
 import '../../widgets/empty_state.dart';
+import '../../widgets/page_layout.dart';
+import '../../widgets/view_header.dart';
 
-const double _dayWidth = 36;
-const double _rowHeight = 44;
-const double _labelWidth = 160;
+const double _dayWidth = 28;
+const double _rowHeight = 38;
+const double _headerHeight = 36;
+const double _labelWidth = 150;
+
+final _ganttMilestoneRepositoryProvider = Provider<MilestoneRepository>(
+  (ref) => MilestoneRepository(),
+);
+
+final _ganttMilestonesProvider = FutureProvider.family<List<Milestone>, String>(
+  (ref, projectId) {
+    return ref
+        .watch(_ganttMilestoneRepositoryProvider)
+        .listForProject(projectId);
+  },
+);
+
+enum _RowKind { project, milestone, task }
+
+class _GanttRowData {
+  final _RowKind kind;
+  final String label;
+  final DateTime start;
+  final DateTime end;
+  final Color color;
+  final String? taskId;
+  const _GanttRowData({
+    required this.kind,
+    required this.label,
+    required this.start,
+    required this.end,
+    required this.color,
+    this.taskId,
+  });
+}
+
+DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
 
 class GanttScreen extends ConsumerStatefulWidget {
   const GanttScreen({super.key});
@@ -21,217 +65,415 @@ class GanttScreen extends ConsumerStatefulWidget {
 }
 
 class _GanttScreenState extends ConsumerState<GanttScreen> {
-  String? _selectedProjectId;
+  String? _selectedProjectId; // null = all projects
 
   @override
   Widget build(BuildContext context) {
     final workspaceId = ref.watch(activeWorkspaceIdProvider);
     if (workspaceId == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.view_timeline_outlined, message: 'No workspace selected'));
+      return const SubPage(
+        crumbs: ['Gantt Timeline'],
+        body: EmptyState(
+          icon: Icons.format_align_left,
+          message: 'No workspace selected',
+        ),
+      );
     }
 
     final projectsAsync = ref.watch(projectsProvider(workspaceId));
     final tasksAsync = ref.watch(tasksProvider(workspaceId));
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Gantt'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: projectsAsync.maybeWhen(
-            data: (projects) {
-              if (projects.isEmpty) return const SizedBox.shrink();
-              _selectedProjectId ??= projects.first.id;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: DropdownButton<String>(
-                  isExpanded: true,
-                  value: _selectedProjectId,
-                  items: [
-                    for (final p in projects) DropdownMenuItem(value: p.id, child: Text(p.name)),
-                  ],
-                  onChanged: (v) => setState(() => _selectedProjectId = v),
-                ),
-              );
-            },
-            orElse: () => const SizedBox.shrink(),
-          ),
-        ),
-      ),
+    return SubPage(
+      crumbs: const ['Gantt Timeline'],
       body: projectsAsync.when(
-        data: (projects) {
-          if (projects.isEmpty) {
-            return const EmptyState(icon: Icons.view_timeline_outlined, message: 'No projects yet');
-          }
-          final project = projects.firstWhere((p) => p.id == _selectedProjectId, orElse: () => projects.first);
-          return tasksAsync.when(
-            data: (allTasks) {
-              final tasks = allTasks.where((t) => t.projectId == project.id).toList();
-              if (tasks.isEmpty) {
-                return const EmptyState(icon: Icons.view_timeline_outlined, message: 'No tasks in this project');
-              }
-              return _GanttChart(project: project, tasks: tasks);
-            },
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        data: (projects) => tasksAsync.when(
+          data: (allTasks) {
+            final visible = projects
+                .where(
+                  (p) =>
+                      p.status != 'archived' &&
+                      (_selectedProjectId == null ||
+                          p.id == _selectedProjectId),
+                )
+                .toList();
+            return ListView(
+              padding: pagePadding(context),
+              children: [
+                ViewHeader(
+                  title: 'Gantt Timeline',
+                  actions: [
+                    FilterSelect<String>(
+                      value: _selectedProjectId,
+                      allLabel: 'All Projects',
+                      options: [for (final p in projects) (p.id, p.name)],
+                      onChanged: (v) => setState(() => _selectedProjectId = v),
+                    ),
+                  ],
+                ),
+                if (visible.isEmpty ||
+                    allTasks
+                        .where((t) => visible.any((p) => p.id == t.projectId))
+                        .isEmpty)
+                  const AppCard(
+                    child: EmptyState(
+                      icon: Icons.format_align_left,
+                      message: 'No tasks to show on the timeline',
+                    ),
+                  )
+                else
+                  _GanttChart(projects: visible, tasks: allTasks),
+              ],
+            );
+          },
+          loading: () => const LoadingView(),
+          error: (e, _) => ErrorView(e),
+        ),
+        loading: () => const LoadingView(),
+        error: (e, _) => ErrorView(e),
       ),
     );
   }
 }
 
-class _GanttChart extends StatelessWidget {
-  final Project project;
+class _GanttChart extends ConsumerWidget {
+  final List<Project> projects;
   final List<Task> tasks;
-  const _GanttChart({required this.project, required this.tasks});
+  const _GanttChart({required this.projects, required this.tasks});
 
   @override
-  Widget build(BuildContext context) {
-    DateTime rangeStart = tasks
-        .map((t) => t.startDate ?? t.createdAt)
-        .reduce((a, b) => a.isBefore(b) ? a : b);
-    DateTime rangeEnd = tasks
-        .map((t) => t.dueDate ?? t.startDate ?? t.createdAt)
-        .reduce((a, b) => a.isAfter(b) ? a : b);
-    if (!rangeEnd.isAfter(rangeStart)) rangeEnd = rangeStart.add(const Duration(days: 1));
+  Widget build(BuildContext context, WidgetRef ref) {
+    final rows = <_GanttRowData>[];
 
-    final totalDays = rangeEnd.difference(rangeStart).inDays + 1;
-    final totalWidth = totalDays * _dayWidth;
+    for (final p in projects) {
+      final pt = tasks.where((t) => t.projectId == p.id).toList();
+      if (pt.isEmpty) continue;
+      final milestones =
+          ref.watch(_ganttMilestonesProvider(p.id)).value ??
+          const <Milestone>[];
 
-    // Group by milestone (tasks without a milestone go under "Unassigned").
-    final Map<String, List<Task>> grouped = {};
-    for (final task in tasks) {
-      final key = task.milestoneId ?? 'unassigned';
-      grouped.putIfAbsent(key, () => []).add(task);
+      final pStart = _day(
+        p.startDate ??
+            pt
+                .map((t) => t.startDate ?? t.createdAt)
+                .reduce((a, b) => a.isBefore(b) ? a : b),
+      );
+      var pEnd = _day(
+        p.endDate ??
+            pt
+                .map((t) => t.dueDate ?? t.startDate ?? t.createdAt)
+                .reduce((a, b) => a.isAfter(b) ? a : b),
+      );
+      if (pEnd.isBefore(pStart)) pEnd = pStart;
+      rows.add(
+        _GanttRowData(
+          kind: _RowKind.project,
+          label: p.name,
+          start: pStart,
+          end: pEnd,
+          color: parseHex(p.color),
+        ),
+      );
+
+      for (final m in milestones) {
+        if (m.dueDate == null) continue;
+        rows.add(
+          _GanttRowData(
+            kind: _RowKind.milestone,
+            label: m.name,
+            start: _day(m.dueDate!),
+            end: _day(m.dueDate!),
+            color: statusMeta[m.status]?.dot ?? const Color(0xFFFBBF24),
+          ),
+        );
+      }
+
+      for (final t in pt) {
+        final s = _day(t.startDate ?? t.createdAt);
+        var e = _day(t.dueDate ?? s);
+        if (e.isBefore(s)) e = s;
+        rows.add(
+          _GanttRowData(
+            kind: _RowKind.task,
+            label: t.title,
+            start: s,
+            end: e,
+            color: statusMeta[t.status]?.color ?? Brand.primary,
+            taskId: t.id,
+          ),
+        );
+      }
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: _labelWidth + totalWidth,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _GanttHeaderRow(rangeStart: rangeStart, totalDays: totalDays),
-              for (final entry in grouped.entries) ...[
+    final today = _day(DateTime.now());
+    var rangeStart = rows
+        .map((r) => r.start)
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    var rangeEnd = rows
+        .map((r) => r.end)
+        .reduce((a, b) => a.isAfter(b) ? a : b);
+    if (today.isBefore(rangeStart)) rangeStart = today;
+    if (today.isAfter(rangeEnd)) rangeEnd = today;
+    rangeStart = rangeStart.subtract(const Duration(days: 3));
+    rangeEnd = rangeEnd.add(const Duration(days: 3));
+
+    final totalDays = math.max(rangeEnd.difference(rangeStart).inDays + 1, 14);
+    final totalWidth = totalDays * _dayWidth;
+    final c = context.c;
+
+    // month segments for the header + column lines
+    final months = <(DateTime, int)>[];
+    var cursor = rangeStart;
+    var i = 0;
+    while (i < totalDays) {
+      final nextMonth = DateTime(cursor.year, cursor.month + 1, 1);
+      final span = math.min(nextMonth.difference(cursor).inDays, totalDays - i);
+      months.add((cursor, span));
+      i += span;
+      cursor = nextMonth;
+    }
+
+    final todayOffset =
+        today.difference(rangeStart).inDays * _dayWidth + _dayWidth / 2;
+
+    return AppCard(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── left labels ──
+          Container(
+            width: _labelWidth,
+            decoration: BoxDecoration(
+              color: c.surface2,
+              border: Border(right: BorderSide(color: c.border)),
+            ),
+            child: Column(
+              children: [
                 Container(
-                  width: _labelWidth + totalWidth,
-                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  height: _headerHeight,
+                  alignment: Alignment.centerLeft,
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: c.border, width: 2),
+                    ),
+                  ),
                   child: Text(
-                    entry.key == 'unassigned' ? 'Unassigned' : entry.key,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                    'TASK / PROJECT',
+                    style: TextStyle(
+                      fontSize: rem(0.72),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.05 * rem(0.72),
+                      color: c.text3,
+                    ),
                   ),
                 ),
-                for (final task in entry.value)
-                  _GanttRow(task: task, rangeStart: rangeStart, totalWidth: totalWidth),
+                for (final r in rows) _LabelCell(row: r),
               ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GanttHeaderRow extends StatelessWidget {
-  final DateTime rangeStart;
-  final int totalDays;
-  const _GanttHeaderRow({required this.rangeStart, required this.totalDays});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const SizedBox(width: _labelWidth, height: 32),
-        for (var i = 0; i < totalDays; i++)
-          SizedBox(
-            width: _dayWidth,
-            height: 32,
-            child: Center(
-              child: Text(
-                DateFormat('d').format(rangeStart.add(Duration(days: i))),
-                style: const TextStyle(fontSize: 10),
-              ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-class _GanttRow extends StatelessWidget {
-  final Task task;
-  final DateTime rangeStart;
-  final double totalWidth;
-  const _GanttRow({required this.task, required this.rangeStart, required this.totalWidth});
-
-  Color _priorityColor() {
-    switch (task.priority) {
-      case 'critical':
-        return Colors.red;
-      case 'high':
-        return Colors.deepOrange;
-      case 'medium':
-        return Colors.amber.shade700;
-      default:
-        return Colors.blueGrey;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final start = task.startDate ?? task.createdAt;
-    final end = task.dueDate ?? start.add(const Duration(days: 1));
-    final offsetDays = start.difference(rangeStart).inDays.clamp(0, 100000);
-    final durationDays = (end.difference(start).inDays + 1).clamp(1, 100000);
-    final color = _priorityColor();
-
-    return SizedBox(
-      height: _rowHeight,
-      child: Row(
-        children: [
-          SizedBox(
-            width: _labelWidth,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: Text(task.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12)),
-            ),
-          ),
-          SizedBox(
-            width: totalWidth,
-            child: Stack(
-              children: [
-                Positioned(
-                  left: offsetDays * _dayWidth,
-                  top: 8,
-                  width: durationDays * _dayWidth,
-                  height: _rowHeight - 16,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.25),
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: color),
+          // ── right timeline ──
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: totalWidth,
+                child: Stack(
+                  children: [
+                    Column(
+                      children: [
+                        Container(
+                          height: _headerHeight,
+                          decoration: BoxDecoration(
+                            color: c.surface2,
+                            border: Border(
+                              bottom: BorderSide(color: c.border, width: 2),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              for (final m in months)
+                                Container(
+                                  width: m.$2 * _dayWidth,
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    border: Border(
+                                      right: BorderSide(color: c.border),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    m.$2 >= 8
+                                        ? DateFormat('MMM yyyy').format(m.$1)
+                                        : DateFormat('MMM').format(m.$1),
+                                    maxLines: 1,
+                                    style: TextStyle(
+                                      fontSize: rem(0.72),
+                                      fontWeight: FontWeight.w600,
+                                      color: c.text3,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        for (final r in rows)
+                          _BarCell(
+                            row: r,
+                            rangeStart: rangeStart,
+                            totalWidth: totalWidth,
+                          ),
+                      ],
                     ),
-                    child: FractionallySizedBox(
-                      alignment: Alignment.centerLeft,
-                      widthFactor: (task.progress.clamp(0, 100)) / 100,
-                      child: Container(
-                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4)),
+                    // today line
+                    Positioned(
+                      left: todayOffset - 1,
+                      top: 0,
+                      bottom: 0,
+                      child: IgnorePointer(
+                        child: Container(
+                          width: 2,
+                          color: Brand.danger.withValues(alpha: .7),
+                        ),
                       ),
                     ),
-                  ),
+                    Positioned(
+                      left: todayOffset + 4,
+                      top: 4,
+                      child: IgnorePointer(
+                        child: Text(
+                          'TODAY',
+                          style: TextStyle(
+                            fontSize: rem(0.62),
+                            fontWeight: FontWeight.w700,
+                            color: Brand.danger,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LabelCell extends StatelessWidget {
+  final _GanttRowData row;
+  const _LabelCell({required this.row});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final (indent, weight, size, color) = switch (row.kind) {
+      _RowKind.project => (14.0, FontWeight.w700, rem(0.8), c.text),
+      _RowKind.milestone => (24.0, FontWeight.w400, rem(0.78), c.text),
+      _RowKind.task => (34.0, FontWeight.w400, rem(0.78), c.text2),
+    };
+    return InkWell(
+      onTap: row.taskId == null
+          ? null
+          : () => context.push('/tasks/${row.taskId}'),
+      child: Container(
+        height: _rowHeight,
+        padding: EdgeInsets.only(left: indent, right: 8),
+        decoration: BoxDecoration(
+          color: row.kind == _RowKind.project ? c.surface2 : null,
+          border: Border(bottom: BorderSide(color: c.border)),
+        ),
+        child: Row(
+          children: [
+            if (row.kind == _RowKind.project) ...[
+              ColorDot(row.color, size: 10),
+              const SizedBox(width: 8),
+            ],
+            Expanded(
+              child: Text(
+                row.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: size,
+                  fontWeight: weight,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BarCell extends StatelessWidget {
+  final _GanttRowData row;
+  final DateTime rangeStart;
+  final double totalWidth;
+  const _BarCell({
+    required this.row,
+    required this.rangeStart,
+    required this.totalWidth,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.c;
+    final left = row.start.difference(rangeStart).inDays * _dayWidth;
+    final width = (row.end.difference(row.start).inDays + 1) * _dayWidth;
+
+    Widget child;
+    if (row.kind == _RowKind.milestone) {
+      child = Positioned(
+        left: left + _dayWidth / 2 - 6,
+        top: (_rowHeight - 12) / 2,
+        child: Transform.rotate(
+          angle: math.pi / 4,
+          child: Container(width: 12, height: 12, color: row.color),
+        ),
+      );
+    } else {
+      child = Positioned(
+        left: left,
+        top: (_rowHeight - 18) / 2,
+        width: width,
+        height: 18,
+        child: Opacity(
+          opacity: row.kind == _RowKind.task ? .85 : 1,
+          child: Container(
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            decoration: BoxDecoration(
+              color: row.color,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: Text(
+              row.label,
+              maxLines: 1,
+              overflow: TextOverflow.clip,
+              style: TextStyle(
+                fontSize: rem(0.68),
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      height: _rowHeight,
+      width: totalWidth,
+      decoration: BoxDecoration(
+        color: row.kind == _RowKind.project
+            ? c.surface2.withValues(alpha: .5)
+            : null,
+        border: Border(bottom: BorderSide(color: c.border)),
+      ),
+      child: Stack(children: [child]),
     );
   }
 }

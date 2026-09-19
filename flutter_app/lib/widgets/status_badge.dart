@@ -1,45 +1,52 @@
 import 'package:flutter/material.dart';
 
+import '../core/tokens.dart';
+import 'app_badge.dart';
+
+/// Task / project / milestone / sprint status, colored like the web `.badge-*` classes.
 class StatusBadge extends StatelessWidget {
   final String status;
   const StatusBadge({super.key, required this.status});
 
-  Color _color() {
+  (Color, Color) _colors() {
     switch (status) {
-      case 'completed':
-        return Colors.green;
       case 'inprogress':
-        return Colors.blue;
+        return (Brand.primaryLight, Brand.primary);
+      case 'completed':
+        return (Brand.successLight, Brand.success);
       case 'blocked':
-        return Colors.red;
-      case 'active':
-        return Colors.green;
-      case 'onhold':
-        return Colors.orange;
-      case 'archived':
-        return Colors.grey;
+        return (Brand.dangerLight, Brand.danger);
       case 'planning':
-        return Colors.purple;
+        return (const Color(0xFFEDE9FE), const Color(0xFF7C3AED));
+      case 'active':
+        return (const Color(0xFFD1FAE5), const Color(0xFF065F46));
+      case 'onhold':
+      case 'on-hold':
+        return (const Color(0xFFFEF3C7), const Color(0xFF92400E));
+      case 'archived':
+        return (const Color(0xFFF1F5F9), const Color(0xFF64748B));
       default: // pending
-        return Colors.orange;
+        return (Brand.warningLight, Brand.warning);
     }
   }
 
-  String _label() => status == 'inprogress' ? 'In Progress' : status.replaceAll('_', ' ');
+  String _label() {
+    switch (status) {
+      case 'inprogress':
+        return 'In Progress';
+      case 'onhold':
+      case 'on-hold':
+        return 'On Hold';
+      default:
+        if (status.isEmpty) return status;
+        final s = status.replaceAll('_', ' ');
+        return s[0].toUpperCase() + s.substring(1);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final color = _color();
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        _label(),
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
-      ),
-    );
+    final c = _colors();
+    return AppBadge(label: _label(), background: c.$1, foreground: c.$2);
   }
 }

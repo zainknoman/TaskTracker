@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/ui_helpers.dart';
+import '../../models/project.dart';
 import '../../models/task.dart';
 import '../../providers/permissions_provider.dart';
+import '../../providers/project_providers.dart';
 import '../../providers/task_providers.dart';
 import '../../providers/workspace_providers.dart';
+import '../../widgets/app_button.dart';
 import '../../widgets/empty_state.dart';
-import '../../widgets/priority_badge.dart';
-import '../../widgets/status_badge.dart';
+import '../../widgets/page_layout.dart';
+import '../../widgets/task_row.dart';
+import '../../widgets/view_header.dart';
 import 'task_form_sheet.dart';
 
 class TasksListScreen extends ConsumerStatefulWidget {
@@ -19,11 +24,20 @@ class TasksListScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksListScreenState extends ConsumerState<TasksListScreen> {
+  String? _projectFilter;
   String? _statusFilter;
   String? _priorityFilter;
 
+  bool get _hasFilters =>
+      _projectFilter != null ||
+      _statusFilter != null ||
+      _priorityFilter != null;
+
   List<Task> _applyFilters(List<Task> tasks) {
     var filtered = tasks;
+    if (_projectFilter != null) {
+      filtered = filtered.where((t) => t.projectId == _projectFilter).toList();
+    }
     if (_statusFilter != null) {
       filtered = filtered.where((t) => t.status == _statusFilter).toList();
     }
@@ -47,75 +61,103 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
     final permissions = ref.watch(permissionsProvider);
 
     if (workspaceId == null) {
-      return const Scaffold(body: EmptyState(icon: Icons.task_outlined, message: 'No workspace selected'));
+      return const EmptyState(
+        icon: Icons.assignment_turned_in,
+        message: 'No workspace selected',
+      );
     }
 
     final tasksAsync = ref.watch(tasksProvider(workspaceId));
+    final projects =
+        ref.watch(projectsProvider(workspaceId)).value ?? const <Project>[];
+    final projectById = {for (final p in projects) p.id: p};
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Tasks')),
-      body: Column(
-        children: [
-          SizedBox(
-            height: 48,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              children: [
-                for (final status in const ['pending', 'inprogress', 'completed', 'blocked'])
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: FilterChip(
-                      label: Text(status == 'inprogress' ? 'In Progress' : status.replaceAll('_', ' ')),
-                      selected: _statusFilter == status,
-                      onSelected: (selected) => setState(() => _statusFilter = selected ? status : null),
-                    ),
+    return tasksAsync.when(
+      data: (tasks) {
+        final filtered = _applyFilters(tasks);
+        return ListView(
+          padding: pagePadding(context),
+          children: [
+            ViewHeader(
+              title: 'All Tasks',
+              subtitle:
+                  '${filtered.length} task${filtered.length == 1 ? '' : 's'}',
+              actions: [
+                if (permissions.canEdit)
+                  AppButton(
+                    '+ New Task',
+                    onPressed: () => TaskFormSheet.show(context),
                   ),
               ],
             ),
-          ),
-          Expanded(
-            child: tasksAsync.when(
-              data: (tasks) {
-                final filtered = _applyFilters(tasks);
-                if (filtered.isEmpty) {
-                  return const EmptyState(icon: Icons.task_outlined, message: 'No tasks found');
-                }
-                return ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final task = filtered[index];
-                    return ListTile(
-                      title: Text(task.title),
-                      subtitle: task.dueDate != null
-                          ? Text('Due ${task.dueDate!.toLocal()}'.split(' ').first)
-                          : null,
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          PriorityBadge(priority: task.priority),
-                          const SizedBox(width: 6),
-                          StatusBadge(status: task.status),
-                        ],
-                      ),
-                      onTap: () => context.push('/tasks/${task.id}'),
-                    );
-                  },
-                );
-              },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+            FilterBar(
+              children: [
+                FilterSelect<String>(
+                  value: _projectFilter,
+                  allLabel: 'All Projects',
+                  options: [for (final p in projects) (p.id, p.name)],
+                  onChanged: (v) => setState(() => _projectFilter = v),
+                ),
+                FilterSelect<String>(
+                  value: _statusFilter,
+                  allLabel: 'All Status',
+                  options: taskStatusOptions,
+                  onChanged: (v) => setState(() => _statusFilter = v),
+                ),
+                FilterSelect<String>(
+                  value: _priorityFilter,
+                  allLabel: 'All Priority',
+                  options: priorityOptions,
+                  onChanged: (v) => setState(() => _priorityFilter = v),
+                ),
+                if (_hasFilters)
+                  AppButton.ghost(
+                    '✕ Clear',
+                    small: true,
+                    onPressed: () => setState(() {
+                      _projectFilter = null;
+                      _statusFilter = null;
+                      _priorityFilter = null;
+                    }),
+                  ),
+              ],
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: permissions.canEdit
-          ? FloatingActionButton(
-              heroTag: 'tasksListFab',
-              onPressed: () => TaskFormSheet.show(context),
-              child: const Icon(Icons.add),
-            )
-          : null,
+            if (filtered.isEmpty)
+              TaskTable(
+                rows: [
+                  EmptyState(
+                    icon: Icons.check_circle_outline,
+                    message: 'No tasks found',
+                    hint: 'Try adjusting filters or create a new task',
+                    action: permissions.canEdit
+                        ? AppButton(
+                            '+ Create Task',
+                            onPressed: () => TaskFormSheet.show(context),
+                          )
+                        : null,
+                  ),
+                ],
+              )
+            else
+              TaskTable(
+                rows: [
+                  for (final (i, task) in filtered.indexed)
+                    TaskRow(
+                      task: task,
+                      projectName: projectById[task.projectId]?.name,
+                      projectColor: parseHex(
+                        projectById[task.projectId]?.color,
+                      ),
+                      last: i == filtered.length - 1,
+                      onTap: () => context.push('/tasks/${task.id}'),
+                    ),
+                ],
+              ),
+          ],
+        );
+      },
+      loading: () => const LoadingView(),
+      error: (e, _) => ErrorView(e),
     );
   }
 }
