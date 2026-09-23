@@ -521,7 +521,8 @@ Never commit `config.js` when it contains environment-specific credentials.
 Carried over from the previous single-user version but **not yet ported** to the multi-tenant Supabase architecture:
 
 * Global search (`#globalSearch` input exists in `index.html`, no listener)
-* Export/Import JSON & CSV (`#exportJsonBtn` exists, no handler; no export/import functions exist anywhere in `js/`)
+* Full workspace, project, and task JSON export/import
+* Task detail copy controls and Markdown notes
 * Saved views (`state.savedViews` exists, unused)
 * Smart Productivity Check
 * Deadline Health Score
@@ -619,3 +620,16 @@ The application continues to evolve from the original single-user/localStorage a
 This project is licensed under the MIT License.
 
 See `LICENSE` for details.
+
+
+## Import & Export
+
+The database-backed application supports workspace-scoped JSON export/import without localStorage.
+
+- **Full Workspace Export/Import** — backup the active workspace's projects, tasks, milestones, and sprints.
+- **Project Export JSON** — export one project with its related tasks, milestones, and sprints.
+- **Task Export JSON** — export one task plus lightweight project identification.
+- **Task Import** — available from All Tasks and Projects; accepts only TaskFlow Pro task exports with `exportType: taskflow-task` and `formatVersion: 1`.
+- Imported tasks receive new database IDs and are matched to a local project by source ID, project code, or project name.
+- **CSV Export** remains available for spreadsheet-oriented task data.
+
