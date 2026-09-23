@@ -191,6 +191,8 @@ export function openTaskForm(taskId = null, presetProjectId = null) {
   setVal('fActualHours', task?.actual_hours     || '');
   setVal('fProgress',    task?.progress         || 0);
   setVal('fNotes',       task?.notes            || '');
+  const notesPreview = $id('fNotesPreview');
+  if (notesPreview) notesPreview.innerHTML = renderMarkdown(task?.notes || '');
   const pv = $id('fProgressVal'); if (pv) pv.textContent = (task?.progress || 0) + '%';
   const asSel = $id('fAssignee');
   if (asSel) {
