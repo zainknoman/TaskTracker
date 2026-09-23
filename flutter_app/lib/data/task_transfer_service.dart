@@ -97,11 +97,15 @@ class TaskTransferService {
       }
     }
 
+    if (matched == null) {
+      throw const FormatException('The source project could not be matched in this workspace.');
+    }
+
     final imported = <String, dynamic>{
       ...source,
       'id': const Uuid().v4(),
       'workspace_id': workspaceId,
-      'project_id': matched?.id,
+      'project_id': matched.id,
       'parent_task_id': null,
       'dependencies': <dynamic>[],
       'created_by': currentUserId,
