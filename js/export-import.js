@@ -100,11 +100,12 @@ export async function importTaskJSON(file, refresh) {
     validateTaskExport(data);
     const source = clone(data.task);
     const project = matchProject(data.project);
+    if (!project) throw new Error('The source project could not be matched in this workspace');
 
     const task = {
       ...source,
       id: undefined,
-      project_id: project?.id || null,
+      project_id: project.id,
       parent_task_id: null,
       dependencies: [],
       created_by: undefined,
@@ -122,7 +123,7 @@ export async function importTaskJSON(file, refresh) {
     const saved = await saveTask(task);
     state.tasks.unshift(saved);
     refresh?.();
-    toast(project ? `Imported "${saved.title}" into ${project.name}` : `Imported "${saved.title}" without a project`, 'success');
+    toast(`Imported "${saved.title}" into ${project.name}`, 'success');
   } catch (e) {
     toast('Import failed: ' + e.message, 'error');
   }
