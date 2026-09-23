@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -6,6 +8,7 @@ import '../../core/tokens.dart';
 import '../../core/ui_helpers.dart';
 import '../../data/exceptions.dart';
 import '../../data/task_comment_repository.dart';
+import '../../data/task_transfer_service.dart';
 import '../../models/project.dart';
 import '../../models/task.dart';
 import '../../models/task_comment.dart';
@@ -24,6 +27,8 @@ import '../../widgets/page_layout.dart';
 import '../../widgets/priority_badge.dart';
 import '../../widgets/status_badge.dart';
 import 'task_form_sheet.dart';
+
+final _taskTransferServiceProvider = Provider<TaskTransferService>((ref) => TaskTransferService());
 
 final _taskCommentRepositoryProvider = Provider<TaskCommentRepository>(
   (ref) => TaskCommentRepository(),
@@ -91,6 +96,19 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _exportTask(Project? project) async {
+    try {
+      await ref.read(_taskTransferServiceProvider).exportTask(widget.task, project: project);
+    } on Exception catch (e) {
+      if (mounted) AppToast.error(context, e.toString());
+    }
+  }
+
+  Future<void> _copy(String value, String label) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (mounted) AppToast.success(context, '$label copied');
   }
 
   Future<void> _changeStatus(String status) async {
@@ -182,6 +200,11 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
     return SubPage(
       crumbs: ['All Tasks', task.title],
       actions: [
+        AppButton.secondary(
+          'Export JSON',
+          small: true,
+          onPressed: () => _exportTask(project),
+        ),
         if (permissions.canEdit)
           AppButton.secondary(
             'Edit',
@@ -291,12 +314,29 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
                 if (task.description != null && task.description!.isNotEmpty)
                   _DetailSection(
                     title: 'Description',
+                    action: _CopyButton(onPressed: () => _copy(task.description!, 'Description')),
                     child: Text(
                       task.description!,
                       style: TextStyle(
                         fontSize: rem(0.85),
                         color: c.text2,
                         height: 1.6,
+                      ),
+                    ),
+                  ),
+                if (task.notes != null && task.notes!.isNotEmpty)
+                  _DetailSection(
+                    title: 'Notes',
+                    action: _CopyButton(onPressed: () => _copy(task.notes!, 'Notes')),
+                    child: MarkdownBody(
+                      data: task.notes!,
+                      selectable: true,
+                      styleSheet: MarkdownStyleSheet(
+                        p: TextStyle(fontSize: rem(0.85), color: c.text2, height: 1.6),
+                        h1: TextStyle(fontSize: rem(1.25), color: c.text, fontWeight: FontWeight.w800),
+                        h2: TextStyle(fontSize: rem(1.05), color: c.text, fontWeight: FontWeight.w700),
+                        h3: TextStyle(fontSize: rem(0.95), color: c.text, fontWeight: FontWeight.w700),
+                        code: TextStyle(fontSize: rem(0.78), color: c.text),
                       ),
                     ),
                   ),
@@ -322,6 +362,7 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
                           _SubtaskRow(
                             title: s is Map ? '${s['title'] ?? ''}' : '$s',
                             done: s is Map && s['done'] == true,
+                            onCopy: () => _copy(s is Map ? '${s['title'] ?? ''}' : '$s', 'Subtask'),
                           ),
                       ],
                     ),
@@ -453,7 +494,8 @@ class _TaskDetailBodyState extends ConsumerState<_TaskDetailBody> {
 class _DetailSection extends StatelessWidget {
   final String title;
   final Widget child;
-  const _DetailSection({required this.title, required this.child});
+  final Widget? action;
+  const _DetailSection({required this.title, required this.child, this.action});
 
   @override
   Widget build(BuildContext context) {
@@ -476,6 +518,7 @@ class _DetailSection extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Expanded(child: Container(height: 1, color: c.border)),
+              if (action != null) ...[const SizedBox(width: 8), action!],
             ],
           ),
           const SizedBox(height: 8),
@@ -486,10 +529,19 @@ class _DetailSection extends StatelessWidget {
   }
 }
 
+class _CopyButton extends StatelessWidget {
+  final VoidCallback onPressed;
+  const _CopyButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) => TextButton(onPressed: onPressed, child: const Text('Copy'));
+}
+
 class _SubtaskRow extends StatelessWidget {
   final String title;
   final bool done;
-  const _SubtaskRow({required this.title, required this.done});
+  final VoidCallback onCopy;
+  const _SubtaskRow({required this.title, required this.done, required this.onCopy});
 
   @override
   Widget build(BuildContext context) {
@@ -510,6 +562,7 @@ class _SubtaskRow extends StatelessWidget {
               ),
             ),
           ),
+          _CopyButton(onPressed: onCopy),
         ],
       ),
     );
