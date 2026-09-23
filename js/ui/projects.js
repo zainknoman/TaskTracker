@@ -128,6 +128,7 @@ export function renderProjectDetail(pid) {
           </div>
         </div>
         <div class="pdh-actions">
+          <button class="btn btn-secondary btn-sm" id="pdh-exportBtn">↓ Export JSON</button>
           <button class="btn btn-secondary btn-sm" id="pdh-editBtn">Edit</button>
           <button class="btn btn-primary btn-sm" id="pdh-newTaskBtn">+ Task</button>
         </div>
@@ -144,6 +145,7 @@ export function renderProjectDetail(pid) {
         <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:5px;color:var(--text-3)"><span>Project Completion</span><strong style="color:var(--primary)">${ppct}%</strong></div>
         <div class="progress-track"><div class="progress-fill" style="width:${ppct}%;background:linear-gradient(90deg,${p.color},${p.color}88)"></div></div>
       </div>`;
+    $id('pdh-exportBtn')?.addEventListener('click', () => exportProjectJSON(pid));
     $id('pdh-editBtn')?.addEventListener('click', () => openProjectForm(pid));
     $id('pdh-newTaskBtn')?.addEventListener('click', () => window.openTaskForm?.(null, pid));
   }
