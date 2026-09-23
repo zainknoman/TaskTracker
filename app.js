@@ -22,6 +22,8 @@ import { markAllRead } from './js/notifications.js';
 import { setRouter } from './js/router.js';
 import { setCallbacks as setProjectCallbacks } from './js/ui/projects.js';
 import { setCallbacks as setTaskCallbacks } from './js/ui/tasks.js';
+import { bindExportImport } from './js/export-import.js';
+import { renderMarkdown } from './js/utils.js';
 
 // Expose functions called from inline onclick attributes in HTML render output
 window.openTaskForm = openTaskForm;
@@ -307,6 +309,11 @@ function bindEvents() {
   );
 
   // ── Progress slider ───────────────────────────────────────
+  $id('fNotes')?.addEventListener('input', () => {
+    const preview = $id('fNotesPreview');
+    if (preview) preview.innerHTML = renderMarkdown($id('fNotes')?.value || '');
+  });
+
   $id('fProgress')?.addEventListener('input', () => {
     const pv = $id('fProgressVal'); if (pv) pv.textContent = $id('fProgress').value + '%';
   });
@@ -343,4 +350,5 @@ setRouter(switchView);
 setProjectCallbacks(refreshView, updateNavBadges, updateSidebarProjects);
 setTaskCallbacks(refreshView, updateNavBadges);
 bindEvents();
+bindExportImport({ refresh: refreshView });
 initApp();
