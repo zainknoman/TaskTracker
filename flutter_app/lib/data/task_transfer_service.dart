@@ -36,6 +36,16 @@ class TaskTransferService {
   }
 
   Future<void> exportProject(Project project, List<Task> tasks) async {
+    final milestones = await SupabaseConfig.client
+        .from('milestones')
+        .select()
+        .eq('workspace_id', project.workspaceId)
+        .eq('project_id', project.id);
+    final sprints = await SupabaseConfig.client
+        .from('sprints')
+        .select()
+        .eq('workspace_id', project.workspaceId)
+        .eq('project_id', project.id);
     final payload = {
       'exportType': 'taskflow-project',
       'formatVersion': 1,
@@ -43,6 +53,8 @@ class TaskTransferService {
       'workspaceId': project.workspaceId,
       'project': project.toJson(),
       'tasks': tasks.map((t) => t.toJson()).toList(),
+      'milestones': milestones,
+      'sprints': sprints,
     };
     await _shareJson(payload, 'taskflow_project_${(project.code?.isNotEmpty == true) ? project.code! : project.id}.json');
   }
@@ -50,6 +62,8 @@ class TaskTransferService {
   Future<void> exportWorkspace(String workspaceId) async {
     final projects = await projectRepository.listForWorkspace(workspaceId);
     final tasks = await taskRepository.listForWorkspace(workspaceId);
+    final milestones = await SupabaseConfig.client.from('milestones').select().eq('workspace_id', workspaceId);
+    final sprints = await SupabaseConfig.client.from('sprints').select().eq('workspace_id', workspaceId);
     final payload = {
       'exportType': 'taskflow-workspace',
       'formatVersion': 1,
@@ -57,6 +71,8 @@ class TaskTransferService {
       'workspaceId': workspaceId,
       'projects': projects.map((p) => p.toJson()).toList(),
       'tasks': tasks.map((t) => t.toJson()).toList(),
+      'milestones': milestones,
+      'sprints': sprints,
     };
     await _shareJson(payload, 'taskflow_workspace.json');
   }
