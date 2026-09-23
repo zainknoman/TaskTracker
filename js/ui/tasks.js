@@ -1,5 +1,6 @@
 import { state, findTask, findProject, getActiveTasks, getBAList, updateEntity, addEntity, removeEntity } from '../state.js';
-import { $id, esc, fmtDate, isOverdue, calcProgress, getTagColor, setVal, markError, openOverlay, closeOverlay, toast, STATUS_META, PRIORITY_META } from '../utils.js';
+import { $id, esc, fmtDate, isOverdue, calcProgress, getTagColor, setVal, markError, openOverlay, closeOverlay, toast, STATUS_META, PRIORITY_META, copyText, renderMarkdown } from '../utils.js';
+import { exportTaskJSON } from '../export-import.js';
 import { saveTask as dbSaveTask, deleteTask as dbDeleteTask, logTaskActivity } from '../storage.js';
 
 let _refresh, _updateBadges;
@@ -383,11 +384,11 @@ export function openTaskDetail(taskId) {
         <div class="progress-track" style="height:8px;margin-top:4px"><div class="progress-fill" style="width:${calcProgress(t)}%"></div></div>
       </div>
     </div>
-    ${t.description ? `<div class="detail-section"><h4>Description</h4><p style="font-size:.85rem;color:var(--text-2);line-height:1.6">${esc(t.description)}</p></div>` : ''}
+    ${t.description ? `<div class="detail-section"><div class="detail-section-header"><h4>Description</h4><button type="button" class="detail-copy-btn" data-copy-type="description">Copy</button></div><p style="font-size:.85rem;color:var(--text-2);line-height:1.6;white-space:pre-wrap">${esc(t.description)}</p></div>` : ''}
     ${t.tags?.length ? `<div class="detail-section"><h4>Tags</h4><div style="display:flex;flex-wrap:wrap;gap:6px">${t.tags.map(tg=>`<span class="tag-chip tag-color-${getTagColor(tg)}">${esc(tg)}</span>`).join('')}</div></div>` : ''}
     ${t.subtasks?.length ? `<div class="detail-section"><h4>Subtasks (${t.subtasks.filter(s=>s.done).length}/${t.subtasks.length})</h4>
       ${t.subtasks.map(s=>`<div class="subtask-detail-item ${s.done?'done':''}">
-        <span>${s.done?'✅':'⬜'}</span><span>${esc(s.title)}</span>
+        <span>${s.done?'✅':'⬜'}</span><span>${esc(s.title)}</span><button type="button" class="detail-copy-btn" data-copy-type="subtask" data-copy-value="${esc(s.title)}">Copy</button>
       </div>`).join('')}</div>` : ''}
     ${t.documents?.length ? `<div class="detail-section"><h4>Reference Documents</h4>
       ${t.documents.map(doc=>`<div class="doc-link-row">
@@ -401,14 +402,22 @@ export function openTaskDetail(taskId) {
         <span class="dep-item-title">${esc(dt.title)}</span>
         <span class="badge badge-${dt.status}">${STATUS_META[dt.status].label}</span>
       </div>`).join('')}</div>` : ''}
-    ${t.notes ? `<div class="detail-section"><h4>Notes</h4><p style="font-size:.85rem;color:var(--text-2);line-height:1.6;white-space:pre-wrap">${esc(t.notes)}</p></div>` : ''}
+    ${t.notes ? `<div class="detail-section"><div class="detail-section-header"><h4>Notes</h4><button type="button" class="detail-copy-btn" data-copy-type="notes">Copy</button></div><div class="markdown-body task-notes-preview">${renderMarkdown(t.notes)}</div></div>` : ''}
     <div class="detail-section"><h4>Activity</h4><p class="no-data">No activity yet</p></div>`;
+  body.querySelectorAll('.detail-copy-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.copyType;
+      const value = type === 'description' ? t.description : type === 'notes' ? t.notes : btn.dataset.copyValue;
+      copyText(value || '', `${type === 'subtask' ? 'Subtask' : type[0].toUpperCase() + type.slice(1)} copied!`);
+    });
+  });
   body.querySelectorAll('.doc-copy-btn').forEach(btn =>
     btn.addEventListener('click', () => navigator.clipboard?.writeText(btn.dataset.url).then(() => toast('Link copied!', 'info')))
   );
   body.querySelectorAll('.dep-item[data-id]').forEach(el =>
     el.addEventListener('click', () => { closeOverlay('detailOverlay'); openTaskDetail(el.dataset.id); })
   );
+  $id('detailExportBtn')?.addEventListener('click', () => exportTaskJSON(taskId));
   $id('detailEditBtn').onclick   = () => { closeOverlay('detailOverlay'); openTaskForm(taskId); };
   $id('detailDeleteBtn').onclick = () => { closeOverlay('detailOverlay'); confirmDeleteTask(taskId); };
   $id('detailStarBtn').onclick   = () => {
