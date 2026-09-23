@@ -7,6 +7,7 @@
   
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
@@ -234,7 +235,7 @@
               </button>
             </div>
             <select class="filter-select" id="projectStatusFilter"><option value="">All Status</option><option value="planning">Planning</option><option value="active">Active</option><option value="on-hold">On Hold</option><option value="completed">Completed</option></select>
-            <button class="btn btn-primary" id="newProjectBtn">+ New Project</button>
+            <button class="btn btn-secondary" id="exportProjectsBtn">↓ Export JSON</button><button class="btn btn-secondary" id="importTaskFromProjectsBtn">↑ Import Task</button><button class="btn btn-primary" id="newProjectBtn">+ New Project</button>
           </div>
         </div>
         <div id="projectsContainer" class="projects-grid"></div>
@@ -253,13 +254,14 @@
           </div>
         </div>
         <div id="projTabContent" class="proj-tab-content"></div>
+        <input type="file" id="taskImportFile" accept=".json,application/json" hidden />
       </section>
 
       <!-- ── ALL TASKS ── -->
       <section id="view-tasks" class="view">
         <div class="view-header">
           <div><h1 class="view-title" id="tasksViewTitle">All Tasks</h1><p class="view-subtitle" id="taskCountLabel"></p></div>
-          <div class="view-actions"><button class="btn btn-primary" id="newTaskBtnList">+ New Task</button></div>
+          <div class="view-actions"><button class="btn btn-secondary" id="importTasksBtn">↑ Import Task</button><button class="btn btn-primary" id="newTaskBtnList">+ New Task</button></div>
         </div>
         <div class="filter-bar">
           <select class="filter-select" id="filterProject"><option value="">All Projects</option></select>
@@ -410,7 +412,7 @@
           <div class="form-group"><label>Estimated Hours</label><input type="number" id="fHours" min="0" step="0.5" placeholder="0"/></div>
           <div class="form-group"><label>Actual Hours</label><input type="number" id="fActualHours" min="0" step="0.5" placeholder="0"/></div>
           <div class="form-group col-span-2"><label>Progress — <span id="fProgressVal">0%</span></label><input type="range" id="fProgress" min="0" max="100" step="5" value="0" class="range-slider"/></div>
-          <div class="form-group col-span-2"><label>Notes</label><textarea id="fNotes" rows="3" placeholder="Additional notes…"></textarea></div>
+          <div class="form-group col-span-2"><label>Notes</label><textarea id="fNotes" rows="3" placeholder="Plain text or Markdown…"></textarea><div id="fNotesPreview" class="markdown-body task-notes-editor-preview"></div></div>
         </div>
       </div>
 
@@ -513,6 +515,7 @@
       <div class="detail-title-row"><span id="detailStatusBadge"></span><h2 id="detailTitle" style="flex:1;overflow:hidden;text-overflow:ellipsis"></h2></div>
       <div class="detail-actions">
         <button class="btn btn-ghost btn-sm" id="detailStarBtn" title="Star/Unstar">⭐</button>
+        <button class="btn btn-secondary btn-sm" id="detailExportBtn">↓ Export JSON</button>
         <button class="btn btn-secondary btn-sm" id="detailEditBtn">Edit</button>
         <button class="btn btn-danger btn-sm" id="detailDeleteBtn">Delete</button>
         <button class="modal-close" id="detailClose"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></button>
