@@ -586,6 +586,17 @@ Before publishing or deploying the application:
 
 ---
 
+## Recent Feature Updates
+
+The database-backed web app and Flutter client now include the feature set ported from the original localStorage version:
+
+- Task Detail **Copy** controls for Description, Notes source, and individual Subtask titles.
+- Plain-text or Markdown **Notes** with rendered previews.
+- **Workspace, Project, and Task JSON export** with database-aware workspace scoping.
+- **Strict Task JSON import** with project matching before database insertion.
+- Flutter task/project/workspace JSON sharing and task import support.
+- Flutter Markdown Notes rendering using `flutter_markdown_plus`.
+
 ## Project Status
 
 TaskFlow Pro is a functional multi-tenant work-management application with:
