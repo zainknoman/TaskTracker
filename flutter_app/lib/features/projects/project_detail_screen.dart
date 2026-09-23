@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/tokens.dart';
+import '../../data/task_transfer_service.dart';
+import '../../widgets/app_toast.dart';
 import '../../core/ui_helpers.dart';
 import '../../data/milestone_repository.dart';
 import '../../data/sprint_repository.dart';
@@ -270,6 +272,18 @@ class _Header extends StatelessWidget {
             const SizedBox(height: 14),
             Row(
               children: [
+                AppButton.secondary(
+                  'Export JSON',
+                  small: true,
+                  onPressed: () async {
+                    try {
+                      await TaskTransferService().exportProject(p, tasks);
+                    } catch (e) {
+                      if (context.mounted) AppToast.error(context, e.toString());
+                    }
+                  },
+                ),
+                const SizedBox(width: 8),
                 AppButton.secondary(
                   'Edit',
                   small: true,
