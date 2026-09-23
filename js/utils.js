@@ -83,3 +83,30 @@ export function toast(msg, type = 'info', dur = 3500) {
   c.appendChild(el);
   setTimeout(() => el.remove(), dur + 300);
 }
+
+export function renderMarkdown(source) {
+  if (!source) return '';
+  if (typeof marked === 'undefined') return esc(source);
+  return marked.parse(source, { breaks: true });
+}
+
+export async function copyText(text, successMessage = 'Copied!') {
+  const value = String(text ?? '');
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(value);
+    else throw new Error('Clipboard API unavailable');
+    toast(successMessage, 'info');
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = value;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    if (ok) toast(successMessage, 'info');
+    return ok;
+  }
+}
