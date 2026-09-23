@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/ui_helpers.dart';
+import '../../data/task_transfer_service.dart';
+import '../../widgets/app_toast.dart';
+import '../../providers/auth_providers.dart';
 import '../../models/project.dart';
 import '../../models/task.dart';
 import '../../providers/permissions_provider.dart';
@@ -24,6 +27,7 @@ class TasksListScreen extends ConsumerStatefulWidget {
 }
 
 class _TasksListScreenState extends ConsumerState<TasksListScreen> {
+  final _transfer = TaskTransferService();
   String? _projectFilter;
   String? _statusFilter;
   String? _priorityFilter;
@@ -83,6 +87,32 @@ class _TasksListScreenState extends ConsumerState<TasksListScreen> {
               subtitle:
                   '${filtered.length} task${filtered.length == 1 ? '' : 's'}',
               actions: [
+                AppButton.secondary(
+                  'Export JSON',
+                  small: true,
+                  onPressed: () async {
+                    try {
+                      await _transfer.exportWorkspace(workspaceId);
+                    } catch (e) {
+                      if (mounted) AppToast.error(context, e.toString());
+                    }
+                  },
+                ),
+                AppButton.secondary(
+                  'Import Task',
+                  small: true,
+                  onPressed: () async {
+                    final userId = ref.read(currentUserProvider)?.id;
+                    if (userId == null) return;
+                    try {
+                      await _transfer.importTask(workspaceId, userId);
+                      ref.invalidate(tasksProvider(workspaceId));
+                      if (mounted) AppToast.success(context, 'Task imported');
+                    } on Exception catch (e) {
+                      if (mounted) AppToast.error(context, e.toString());
+                    }
+                  },
+                ),
                 if (permissions.canEdit)
                   AppButton(
                     '+ New Task',
