@@ -44,7 +44,7 @@ class TaskTransferService {
       'project': project.toJson(),
       'tasks': tasks.map((t) => t.toJson()).toList(),
     };
-    await _shareJson(payload, 'taskflow_project_${project.code.isNotEmpty ? project.code : project.id}.json');
+    await _shareJson(payload, 'taskflow_project_${(project.code?.isNotEmpty == true) ? project.code! : project.id}.json');
   }
 
   Future<void> exportWorkspace(String workspaceId) async {
@@ -101,7 +101,7 @@ class TaskTransferService {
       ...source,
       'id': const Uuid().v4(),
       'workspace_id': workspaceId,
-      'project_id': matched?.id ?? source['project_id'],
+      'project_id': matched?.id,
       'parent_task_id': null,
       'dependencies': <dynamic>[],
       'created_by': currentUserId,
