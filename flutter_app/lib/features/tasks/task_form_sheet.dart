@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../data/exceptions.dart';
 import '../../models/task.dart';
@@ -35,6 +36,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _notesController;
   String? _projectId;
   String _priority = 'medium';
   String _status = 'pending';
@@ -48,6 +50,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
     _descriptionController = TextEditingController(
       text: existing?.description ?? '',
     );
+    _notesController = TextEditingController(text: existing?.notes ?? '');
     _projectId = existing?.projectId ?? widget.initialProjectId;
     _priority = existing?.priority ?? 'medium';
     _status = existing?.status ?? 'pending';
@@ -57,6 +60,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _notesController.dispose();
     super.dispose();
   }
 
@@ -73,6 +77,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
           widget.existing!.copyWith(
             title: _titleController.text.trim(),
             description: _descriptionController.text.trim(),
+            notes: _notesController.text.trim(),
             priority: _priority,
             status: _status,
           ),
@@ -86,6 +91,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
             projectId: _projectId!,
             title: _titleController.text.trim(),
             description: _descriptionController.text.trim(),
+            notes: _notesController.text.trim(),
             priority: _priority,
             status: _status,
             progress: 0,
@@ -143,6 +149,16 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
               controller: _descriptionController,
               maxLines: 3,
             ),
+            const SizedBox(height: 14),
+            AppTextField(
+              label: 'Notes (plain text or Markdown)',
+              controller: _notesController,
+              maxLines: 5,
+            ),
+            if (_notesController.text.trim().isNotEmpty) ...[
+              const SizedBox(height: 8),
+              MarkdownBody(data: _notesController.text.trim()),
+            ],
             const SizedBox(height: 14),
             if (projectsAsync != null)
               projectsAsync.when(
