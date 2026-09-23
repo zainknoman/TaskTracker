@@ -154,6 +154,7 @@ class _TaskFormSheetState extends ConsumerState<TaskFormSheet> {
               label: 'Notes (plain text or Markdown)',
               controller: _notesController,
               maxLines: 5,
+              onChanged: (_) => setState(() {}),
             ),
             if (_notesController.text.trim().isNotEmpty) ...[
               const SizedBox(height: 8),
